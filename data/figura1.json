@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "name": "Figura 1 del enunciado (flujo máximo 14)",
+  "profile": "manual",
+  "units": "paquetes/hora",
+  "source": "O",
+  "sink": "T",
+  "nodes": [
+    { "id": "O", "label": "Origen",  "x": 100, "y": 300 },
+    { "id": "A", "label": "Centro A", "x": 380, "y": 120 },
+    { "id": "B", "label": "Centro B", "x": 380, "y": 480 },
+    { "id": "C", "label": "Centro C", "x": 640, "y": 120 },
+    { "id": "D", "label": "Centro D", "x": 640, "y": 480 },
+    { "id": "T", "label": "Destino", "x": 900, "y": 300 }
+  ],
+  "arcs": [
+    { "id": "O-A", "from": "O", "to": "A", "capacity": 8, "active": true },
+    { "id": "O-B", "from": "O", "to": "B", "capacity": 6, "active": true },
+    { "id": "A-C", "from": "A", "to": "C", "capacity": 5, "active": true },
+    { "id": "A-D", "from": "A", "to": "D", "capacity": 3, "active": true },
+    { "id": "B-D", "from": "B", "to": "D", "capacity": 6, "active": true },
+    { "id": "C-T", "from": "C", "to": "T", "capacity": 5, "active": true },
+    { "id": "D-T", "from": "D", "to": "T", "capacity": 9, "active": true }
+  ]
+}
