@@ -137,7 +137,7 @@ Cumple los invariantes: sin lazos, sin repetidos, sin recíprocos y con capacida
 
 ### 2.2 Resolución a mano (Edmonds-Karp, vecinos en orden alfabético)
 
-Notación: $c_f$ es la capacidad residual. Al enviar $\delta$ por un arco $(u,v)$, $c_f(u,v)$ baja en $\delta$ y el arco inverso $c_f(v,u)$ sube en $\delta$.
+Notación: $c_x$ es la capacidad residual. Al enviar $\delta$ por un arco $(u,v)$, $c_x(u,v)$ baja en $\delta$ y el arco inverso $c_x(v,u)$ sube en $\delta$.
 
 **Iteración 1.** El BFS desde $s$ encuentra el camino más corto $s \to b \to a \to t$.
 - Residuales: $5, 6, 3$. Cuello de botella: $\delta = 3$.
@@ -148,7 +148,7 @@ Notación: $c_f$ es la capacidad residual. Al enviar $\delta$ por un arco $(u,v)
 - $|x| = 5$. Queda saturado $(s,b)$.
 
 **Iteración 3.** Desde $s$ solo se puede salir por $(s,c)$. El BFS encuentra $s \to c \to a \Rightarrow b \to d \to t$, donde $a \Rightarrow b$ es el **arco inverso** de $(b,a)$.
-- Residuales: $c_f(s,c)=7$, $c_f(c,a)=5$, $c_f(a,b)=3$ (el flujo que llevaba $(b,a)$), $c_f(b,d)=6-2=4$, $c_f(d,t)=9-2=7$. Cuello de botella: $\delta = 3$.
+- Residuales: $c_x(s,c)=7$, $c_x(c,a)=5$, $c_x(a,b)=3$ (el flujo que llevaba $(b,a)$), $c_x(b,d)=6-2=4$, $c_x(d,t)=9-2=7$. Cuello de botella: $\delta = 3$.
 - Efecto: se **cancelan** las 3 unidades de $(b,a)$. Ahora $a$ recibe sus 3 unidades desde $c$, y $b$ redirige las suyas hacia $d$.
 - $|x| = 8$.
 

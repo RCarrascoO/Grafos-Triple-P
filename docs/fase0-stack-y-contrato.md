@@ -1,6 +1,6 @@
 # Fase 0 — Stack tecnológico, arquitectura y contrato de datos
 
-> Estado: **propuesta para aprobación del equipo** (redacta: Daniel Prado). Una vez aprobada, este documento es vinculante para `core/`, `app.py` y `data/`.
+> Estado: **aprobado por el equipo** el 16 de noviembre de 2026: stack y frontend (§1) y decisiones D1–D3 (§5). Redacta: Daniel Prado. Este documento es vinculante para `core/`, `app.py` y `data/`.
 > Fuente de verdad: `Proyecto 2 Simulador de una red de distribución de paquetes.pdf`.
 
 ---
@@ -174,7 +174,9 @@ Cada regla devuelve un código estable. La UI muestra el mensaje y los tests ver
 
 Solo invariantes globales. El enunciado dice que "Las modificaciones podrán alterar el número inicial de arcos".
 
-### Decisiones de diseño (requieren visto bueno del equipo)
+### Decisiones de diseño (aprobadas por el equipo)
+
+> D1, D2 y D3 tienen el visto bueno de los cuatro integrantes (confirmado el 16 de noviembre de 2026).
 
 - **D1 — Arcos desactivados.** Un arco desactivado sigue "ocupando" el par $\{u,v\}$:
   - No se puede crear $(u,v)$ (sería repetido) ni $(v,u)$ (sería recíproco).
@@ -187,12 +189,12 @@ Solo invariantes globales. El enunciado dice que "Las modificaciones podrán alt
 
 ## 6. Representación interna del motor (guía para Rodrigo)
 
-- **Red residual:** `residual: dict[str, dict[str, int]]`, con `residual[u][v]` = $c_f(u,v)$. Se construye desde los arcos activos:
-  - Arco directo: $c_f(u,v) = c(u,v) - x(u,v)$.
-  - Arco inverso: $c_f(v,u) = x(u,v)$.
+- **Red residual:** `residual: dict[str, dict[str, int]]`, con `residual[u][v]` = $c_x(u,v)$. Se construye desde los arcos activos:
+  - Arco directo: $c_x(u,v) = c(u,v) - x(u,v)$.
+  - Arco inverso: $c_x(v,u) = x(u,v)$.
 - **Por qué el enunciado prohíbe arcos recíprocos:** como no existen $(u,v)$ y $(v,u)$ a la vez en $G$, el arco inverso residual de $(u,v)$ **nunca colisiona** con un arco original. Por eso basta un único valor por par ordenado, y el flujo de cada arco original se recupera como `x(u,v) = c(u,v) - residual[u][v]`. Conviene mencionarlo en el informe y en la defensa.
 - **BFS:** `collections.deque` y un diccionario `parent`. Los vecinos se recorren en **orden lexicográfico** para que el resultado sea determinista.
-- **Corte mínimo:** $S$ = vértices alcanzables desde $s$ en la red residual final con $c_f > 0$, $T = V \setminus S$. Los arcos del corte son los arcos activos $(u,v)$ con $u \in S$, $v \in T$.
+- **Corte mínimo:** $S$ = vértices alcanzables desde $s$ en la red residual final con $c_x > 0$, $T = V \setminus S$. Los arcos del corte son los arcos activos $(u,v)$ con $u \in S$, $v \in T$.
 - **Complejidad que se cita:** Edmonds-Karp $O(|V|\,|E|^2)$, Ford-Fulkerson-DFS $O(|E|\,|x^*|)$. Ojo: con capacidades enteras **ambos terminan**. El argumento a favor de EK es que su cota no depende de las capacidades y que usa el camino más corto en número de arcos. No es un argumento de terminación.
 
 ---

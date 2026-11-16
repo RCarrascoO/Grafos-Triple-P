@@ -21,6 +21,8 @@ Antes de empezar una tarea, leer el documento de fase que cita. Si se trabaja co
 
 ## Orden y fechas
 
+> **Decisión del equipo (16 de noviembre de 2026): todas las etapas se pueden empezar de inmediato.** El objetivo es terminar el proyecto lo antes posible. Las fechas de la tabla son plazos máximos, no fechas de inicio: nadie tiene que esperar a que "toque" su etapa. Lo único que obliga a esperar son las dependencias que bloquean, listadas más abajo. D1 y D2 ya están hechas, así que todo `core/` está desbloqueado.
+
 | Etapa | Fechas | Qué se hace | Tareas |
 | --- | --- | --- | --- |
 | 1 | 16–17 nov | Base común | D1, D2, N1, S1 |
