@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "name": "Caso de verificación manual (6 vértices, flujo máximo 8)",
+  "profile": "manual",
+  "units": "paquetes/hora",
+  "source": "s",
+  "sink": "t",
+  "nodes": [
+    { "id": "s", "label": "Origen",   "x": 100, "y": 300 },
+    { "id": "b", "label": "Centro b", "x": 350, "y": 130 },
+    { "id": "c", "label": "Centro c", "x": 350, "y": 470 },
+    { "id": "d", "label": "Centro d", "x": 620, "y": 130 },
+    { "id": "a", "label": "Centro a", "x": 620, "y": 470 },
+    { "id": "t", "label": "Destino",  "x": 880, "y": 300 }
+  ],
+  "arcs": [
+    { "id": "s-b", "from": "s", "to": "b", "capacity": 5, "active": true },
+    { "id": "s-c", "from": "s", "to": "c", "capacity": 7, "active": true },
+    { "id": "b-a", "from": "b", "to": "a", "capacity": 6, "active": true },
+    { "id": "b-d", "from": "b", "to": "d", "capacity": 6, "active": true },
+    { "id": "c-a", "from": "c", "to": "a", "capacity": 5, "active": true },
+    { "id": "d-c", "from": "d", "to": "c", "capacity": 5, "active": true },
+    { "id": "a-t", "from": "a", "to": "t", "capacity": 3, "active": true },
+    { "id": "d-t", "from": "d", "to": "t", "capacity": 9, "active": true }
+  ]
+}
