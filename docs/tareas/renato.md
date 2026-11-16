@@ -11,24 +11,25 @@ Regla de la interfaz: `app.py` **no calcula ni valida nada**. Solo llama a funci
 
 ## Base
 
-### N1 — Esqueleto del proyecto
-- Crear las carpetas `core/` y `tests/` con un `__init__.py` vacío en cada una.
-- Crear `requirements.txt` con una sola línea: `streamlit`.
-- Crear `app.py` en la raíz con `import streamlit as st` y `st.title(...)`. Va en la raíz para que `from core... import ...` funcione sin configurar rutas.
+### N1 — Esqueleto del proyecto [COMPLETO]
+- [x] Crear las carpetas `core/` y `tests/` con un `__init__.py` vacío en cada una.
+- [x] Crear `requirements.txt` con una sola línea: `streamlit`.
+- [x] Crear `app.py` en la raíz con `import streamlit as st` y `st.title(...)`. Va en la raíz para que `from core... import ...` funcione sin configurar rutas.
 
 **Listo cuando:** `streamlit run app.py` abre la página con el título y `python -m unittest` corre sin errores de importación.
+
 
 ---
 
 ## Validación — `core/validation.py`
 
-### N2 — `valid_capacity(value) -> bool`
-`True` solo si `value` es `int` (no `bool`, no `float`) y `1 <= value <= 12`.
+### N2 — `valid_capacity(value) -> bool` [COMPLETO]
+- [x] `True` solo si `value` es `int` (no `bool`, no `float`) y `1 <= value <= 12`.
 
 **Listo cuando:** `1` y `12` dan `True`; `0`, `13`, `2.5`, `"5"` y `True` dan `False`.
 
-### N3 — `check_new_arc(network, u, v, capacity) -> str | None`
-Revisa si se puede agregar el arco $(u,v)$. Mira **todos** los arcos de `network["arcs"]`, activos o no (decisión D1). Devuelve el primer código que aplique, en este orden:
+### N3 — `check_new_arc(network, u, v, capacity) -> str | None` [COMPLETO]
+- [x] Revisa si se puede agregar el arco $(u,v)$. Mira **todos** los arcos de `network["arcs"]`, activos o no (decisión D1). Devuelve el primer código que aplique, en este orden:
 1. `"E_UNKNOWN_NODE"` si `u` o `v` no son nodos.
 2. `"E_LOOP"` si `u == v`.
 3. `"E_DUPLICATE"` si ya existe $(u,v)$.
@@ -38,13 +39,13 @@ Revisa si se puede agregar el arco $(u,v)$. Mira **todos** los arcos de `network
 
 **Listo cuando:** sobre `figura1.json`: `("A","O",5)` → `E_RECIPROCAL`; `("A","A",5)` → `E_LOOP`; `("O","A",5)` → `E_DUPLICATE`; `("O","C",13)` → `E_CAPACITY`; `("O","C",5)` → `None`.
 
-### N4 — `count_paths(network, s, t, limit=2) -> int`
-Cuenta caminos dirigidos simples de `s` a `t` usando arcos activos, con una DFS recursiva. Deja de contar al llegar a `limit`.
+### N4 — `count_paths(network, s, t, limit=2) -> int` [COMPLETO]
+- [x] Cuenta caminos dirigidos simples de `s` a `t` usando arcos activos, con una DFS recursiva. Deja de contar al llegar a `limit`.
 
 **Listo cuando:** en `figura1.json` de `O` a `T` devuelve `2` (hay 3, pero se detiene en el límite). De `T` a `O` devuelve `0`.
 
-### N5 — `validate_network(network) -> list[str]`
-Valida una red completa. Devuelve la lista de códigos encontrados (vacía si es válida).
+### N5 — `validate_network(network) -> list[str]` [COMPLETO]
+- [x] Valida una red completa. Devuelve la lista de códigos encontrados (vacía si es válida).
 - Siempre: lazos, repetidos, recíprocos, capacidades, extremos inexistentes, y `E_ST_EQUAL` si `source == sink`.
 - Si `profile == "initial"`: `E_V_RANGE` (10–12 nodos), `E_E_RANGE` (15–20 arcos activos), `E_ISOLATED` (algún nodo sin arcos activos), `E_PATHS` (`count_paths < 2`).
 - Si `profile == "manual"`: `E_V_RANGE_MANUAL` (4–6 nodos).
@@ -58,23 +59,23 @@ Valida una red completa. Devuelve la lista de códigos encontrados (vacía si es
 
 Cada función modifica `network` **solo si la edición es válida** y devuelve `None`. Si no es válida, no cambia nada y devuelve el código de error.
 
-### N6 — `add_arc(network, u, v, capacity) -> str | None`
-Llama a `check_new_arc`. Si pasa, agrega `{"id": f"{u}-{v}", "from": u, "to": v, "capacity": capacity, "active": True}`.
+### N6 — `add_arc(network, u, v, capacity) -> str | None` [COMPLETO]
+- [x] Llama a `check_new_arc`. Si pasa, agrega `{"id": f"{u}-{v}", "from": u, "to": v, "capacity": capacity, "active": True}`.
 
 **Listo cuando:** agregar `("CON","VAL",8)` a la red inicial deja 20 arcos; agregar `("TEM","CON",5)` devuelve `E_RECIPROCAL` y la red sigue con 19.
 
-### N7 — `set_capacity(network, arc_id, capacity) -> str | None`
-Cambia la capacidad del arco si `valid_capacity`. Si no, `"E_CAPACITY"`.
+### N7 — `set_capacity(network, arc_id, capacity) -> str | None` [COMPLETO]
+- [x] Cambia la capacidad del arco si `valid_capacity`. Si no, `"E_CAPACITY"`.
 
 **Listo cuando:** `set_capacity(red, "CON-TEM", 9)` cambia el valor; con `0` o `13` devuelve `E_CAPACITY` y no cambia nada.
 
-### N8 — `set_active(network, arc_id, active) -> None`
-Pone `active` en `True` o `False`. No necesita validar: por la decisión D1, reactivar nunca rompe una regla.
+### N8 — `set_active(network, arc_id, active) -> None` [COMPLETO]
+- [x] Pone `active` en `True` o `False`. No necesita validar: por la decisión D1, reactivar nunca rompe una regla.
 
 **Listo cuando:** tras `set_active(red, "CON-TEM", False)`, `active_arcs(red)` tiene 18 arcos.
 
-### N9 — `remove_arc(network, arc_id) -> None`
-Elimina el arco de `network["arcs"]`. Es la única forma de liberar el par de nodos para crear la ruta en sentido contrario.
+### N9 — `remove_arc(network, arc_id) -> None` [COMPLETO]
+- [x] Elimina el arco de `network["arcs"]`. Es la única forma de liberar el par de nodos para crear la ruta en sentido contrario.
 
 **Listo cuando:** tras eliminar `"CON-TEM"`, `add_arc(red, "TEM", "CON", 5)` devuelve `None`.
 
