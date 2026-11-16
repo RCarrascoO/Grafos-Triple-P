@@ -207,10 +207,4 @@ Esta red tiene **más de un corte mínimo**: también $\{(C,T),(D,T)\}$ suma $5+
 
 ## 4. Tareas que se desprenden de esta fase
 
-| Quién | Tarea | Listo cuando |
-| --- | --- | --- |
-| **Sebastián** | Rehacer §2.2–§2.4 a mano, sin mirar la solución, y dibujar la red residual de cada iteración para el informe. | Sus valores coinciden con §2.3 y §2.4, o reporta la diferencia. |
-| **Rodrigo** | Implementar `core/max_flow.py` y `core/min_cut.py` según §6 de la Fase 0. | `solve` reproduce los resultados de §1.6, §2.5 y §3 para los tres JSON. |
-| **Renato** | Crear el esqueleto del proyecto, `core/network.py` (carga del JSON) y `core/validation.py`. | Los tres JSON cargan y validan con su perfil. Los casos 2–4 de §7 de la Fase 0 devuelven los códigos de error indicados. |
-| **Daniel** | Redactar el Apartado 1 del informe a partir de §1 y fijar la notación común. | Borrador de la sección 1 en `docs/` con $V$, $E$, $c$, restricciones e interpretación. |
-| **Equipo** | Aprobar D1–D3 (Fase 0) y revisar las modificaciones candidatas de §1.7. | Decisión registrada en el repositorio. |
+El detalle por integrante está en `docs/tareas/`.

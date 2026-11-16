@@ -1,28 +1,30 @@
 # Fase 0 — Stack tecnológico, arquitectura y contrato de datos
 
-> Estado: **propuesta para aprobación del equipo** (redacta: Daniel Prado). Una vez aprobada, este documento es vinculante para `core/`, `ui/` y `data/`.
+> Estado: **propuesta para aprobación del equipo** (redacta: Daniel Prado). Una vez aprobada, este documento es vinculante para `core/`, `app.py` y `data/`.
 > Fuente de verdad: `Proyecto 2 Simulador de una red de distribución de paquetes.pdf`.
 
 ---
 
 ## 1. Decisión de stack
 
-**Python 3.11+ (probado en 3.13) con Tkinter, usando solo la biblioteca estándar. Sin dependencias externas.**
+**Python 3.11+ (probado en 3.13). Motor con la biblioteca estándar. Interfaz con Streamlit.**
 
-| Criterio | Python + Tkinter (elegido) | Web (TS/JS + SVG) |
+Decisión del equipo (15 de noviembre de 2026): se eligió **Streamlit** sobre Tkinter y CustomTkinter.
+
+| Criterio | Streamlit (elegido) | Tkinter / CustomTkinter |
 | --- | --- | --- |
-| Motor sin librerías | `dict`, `list`, `set`, `collections.deque`. El código queda casi igual al pseudocódigo de Cormen. | `Map`, `Array`. Igual de viable. |
-| GUI y dibujo | `tkinter.Canvas` dibuja círculos, flechas (`arrow=LAST`) y etiquetas. Es suficiente, porque el enunciado dice "No se requiere… una interfaz gráfica compleja". | SVG/Canvas. Se ve mejor, pero hay que mantener HTML, CSS, JS y tooling. |
-| Ejecución por el docente | `python main.py`. No requiere `pip install` porque Tkinter viene con Python. | Abrir `index.html` (sin TS) o `npm install` (con TS). |
-| Auditoría de "cero librerías algorítmicas" | **Trivial**: no hay `requirements.txt` con dependencias y no aparecen `networkx`, `scipy` ni `numpy` en el repo. | Trivial si se usa JS puro. |
-| Tests | `unittest`, de la biblioteca estándar. | Necesita Jest/Vitest, o sea, dependencias. |
-| Curva del equipo | Baja, porque es el lenguaje habitual del curso. | Media. |
+| Cantidad de código de interfaz | La menor: cada control es una línea (`st.selectbox`, `st.number_input`, `st.table`). | Más código de ventanas, marcos y eventos. |
+| Defensa línea por línea | Fácil: el archivo se lee de arriba hacia abajo. | Más difícil: callbacks y geometría de widgets. |
+| Dibujo de la red | `st.graphviz_chart` con un texto DOT: flechas, colores y etiquetas sin calcular geometría. | `Canvas`: hay que calcular coordenadas y bordes. |
+| Instalación | `pip install streamlit` | Ninguna (Tkinter) |
 
-**Regla dura:** el repositorio **no importa** `networkx`, `scipy`, `numpy` ni `igraph`, **ni siquiera para dibujar**. Así se elimina cualquier duda en la revisión del código.
+**Qué exige el enunciado.** Prohíbe las bibliotecas "que realicen los cálculos algorítmicos solicitados" y permite las "bibliotecas para gráficos e interfaz". Streamlit es una biblioteca de interfaz. Graphviz, que usa `st.graphviz_chart`, solo decide dónde dibujar los nodos: no calcula flujos, caminos ni cortes.
 
-Imports permitidos:
-- En `core/`: `collections`, `dataclasses`, `json`, `typing`, `copy`.
-- En `ui/`: además, `tkinter`.
+**Reglas duras:**
+- `core/` y `tests/` importan **solo la biblioteca estándar** (`collections`, `json`, `copy`, `itertools`, `random`, `unittest`).
+- `app.py` importa `streamlit` y los módulos de `core/`. Nada más.
+- Ningún archivo del repositorio importa `networkx`, `scipy`, `numpy`, `pandas` ni `igraph`. Streamlit instala `numpy` y `pandas` como dependencias propias, pero el código del proyecto no los usa. A `st.table` se le pasan listas de diccionarios.
+- `requirements.txt` contiene una sola línea: `streamlit`.
 
 ---
 
@@ -30,34 +32,35 @@ Imports permitidos:
 
 ```
 Grafos-Triple-P/
-├── main.py                  # Punto de entrada: python main.py
-├── core/                    # MOTOR PURO. Solo biblioteca estándar. No conoce a ui/.
-│   ├── network.py           # Modelo Network (nodos, arcos, s, t) + carga/guardado JSON
+├── app.py                   # Interfaz Streamlit: streamlit run app.py
+├── requirements.txt         # streamlit
+├── core/                    # MOTOR PURO. Solo biblioteca estándar. No conoce a app.py.
+│   ├── network.py           # Carga del JSON. La red en memoria ES el diccionario del JSON (sin clases)
 │   ├── validation.py        # Invariantes topológicos y perfiles (initial / modified / manual)
+│   ├── edits.py             # Ediciones validadas: agregar, cambiar capacidad, desactivar, eliminar
 │   ├── max_flow.py          # Edmonds-Karp (BFS) + log de iteraciones
 │   ├── min_cut.py           # Partición (S, T) por alcanzabilidad en la red residual
-│   └── verify.py            # Comprobaciones del apartado 5: capacidad, conservación, |x| = c(S,T)
-├── ui/                      # VISTA. Importa core/, nunca al revés.
-│   └── app.py               # Tkinter: canvas, selectores s/t, panel de edición, panel de resultados
+│   ├── verify.py            # Comprobaciones del apartado 5: capacidad, conservación, |x| = c(S,T)
+│   └── solver.py            # solve(): une motor, corte y verificación en el resultado del §4
 ├── data/                    # Redes en formato JSON (contrato §3)
 │   ├── figura1.json         # Red de la Figura 1 del PDF (|x| = 14)
-│   ├── manual_case.json     # Caso de verificación manual, 4–6 vértices (Sebastián)
-│   ├── initial_network.json # Red principal, 10–12 vértices, 15–20 arcos (Daniel)
+│   ├── manual_case.json     # Caso de verificación manual, 6 vértices (|x| = 8)
+│   ├── initial_network.json # Red principal, 11 vértices, 19 arcos (|x| = 20)
 │   ├── mod1.json            # Modificación 1 (Sebastián + equipo)
 │   └── mod2.json            # Modificación 2
 ├── tests/                   # unittest: python -m unittest
-└── docs/                    # Documentos de diseño de cada fase
+└── docs/                    # Documentos de diseño de cada fase y tareas
 ```
 
-**Dependencia unidireccional:** `ui → core`. El motor se puede probar y demostrar por consola sin abrir la interfaz.
+**Dependencia unidireccional:** `app.py → core`. El motor se puede probar y demostrar por consola sin abrir la interfaz.
 
 ### Responsables por módulo
 
 | Módulo | Responsable | Revisa |
 | --- | --- | --- |
 | `core/network.py`, `data/initial_network.json`, este contrato | Daniel | Rodrigo |
-| `core/max_flow.py`, `core/min_cut.py` | Rodrigo | Sebastián |
-| `core/validation.py`, `ui/`, `main.py`, README | Renato | Daniel |
+| `core/max_flow.py`, `core/min_cut.py`, `core/solver.py` | Rodrigo | Sebastián |
+| `core/validation.py`, `core/edits.py`, `app.py`, `requirements.txt`, README | Renato | Daniel |
 | `core/verify.py`, `tests/`, `data/manual_case.json`, `mod1.json`, `mod2.json` | Sebastián | Rodrigo |
 
 `validation.py` queda en `core/` aunque lo escriba Renato. Así el validador es testeable y los perfiles se aplican igual desde la UI y desde los tests.
@@ -90,7 +93,7 @@ Grafos-Triple-P/
 | `source`, `sink` | id de nodo | Son los valores sugeridos. La UI permite cambiarlos. Deben cumplir `source ≠ sink`. |
 | `nodes[].id` | string | Único, corto y sin espacios (`"O"`, `"C1"`). Es la clave en todo el sistema. |
 | `nodes[].label` | string | Nombre logístico para el informe ("Centro Temuco"). |
-| `nodes[].x`, `y` | int | Coordenadas en un lienzo lógico de **1000 × 600**. La UI las escala al tamaño real. |
+| `nodes[].x`, `y` | int | Coordenadas sugeridas en un lienzo lógico de **1000 × 600**. La interfaz Streamlit **no las usa** (Graphviz ubica los nodos solo); quedan como referencia para las figuras del informe. |
 | `arcs[].id` | string | Por convención `"<from>-<to>"`. Es único. |
 | `arcs[].capacity` | int | $c(u,v) \in \{1,\dots,12\}$. Nunca 0: "cortar" una ruta se modela con `active: false`. |
 | `arcs[].active` | bool | Un arco con `false` **no participa** en el flujo ni en el corte, pero sí **existe** para las reglas de repetidos y recíprocos (§5, decisión D1). |

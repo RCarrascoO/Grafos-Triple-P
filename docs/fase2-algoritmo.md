@@ -175,7 +175,7 @@ Recalcula todo a partir de `flows` y de la red, sin usar la red residual. Así u
 | `check_conservation(network, flows, s, t)` | Entrada = salida en cada $v \ne s,t$. Devuelve además la tabla `node / in / out`. |
 | `flow_value(network, flows, s)` | $\lvert x\rvert$ según la fórmula del enunciado (salida neta de $s$). |
 | `cut_capacity(network, S)` | $c(S,T)$ según la definición. |
-| `check_duality(...)` | `flow_value == cut_capacity`, y además $s \in S$, $t \notin S$. |
+| `verify_all(network, flows, S, s, t)` | Arma el bloque `checks` del resultado: las tres comprobaciones anteriores más `duality_ok` (`flow_value == cut_capacity`, $s \in S$, $t \notin S$). |
 
 ### 7.4 `core/solver.py`
 
