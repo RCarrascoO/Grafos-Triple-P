@@ -102,7 +102,7 @@ En consecuencia, **el valor del flujo máximo es igual a la capacidad del corte 
 - (2 ⇒ 3): sea $S$ el conjunto de vértices alcanzables desde $s$ en $G_x$ y $T = V \setminus S$. Como no hay camino aumentante, $t \in T$. Todo arco original de $S$ a $T$ está **saturado** (si no, su extremo final sería alcanzable). Todo arco original de $T$ a $S$ lleva **flujo 0** (si no, su arco inverso haría alcanzable al extremo en $T$). Por el Lema 1, $|x| = c(S,T) - 0$.
 - (3 ⇒ 1): por el Lema 2 ningún flujo supera $c(S,T)$, así que $x$ es máximo. El mismo argumento muestra que el corte es mínimo.
 
-**Cómo se usa en el proyecto.** El paso (2 ⇒ 3) **es** el procedimiento de `min_cut.py`: una búsqueda desde $s$ en la red residual final. El caso manual lo ilustra completo: los arcos $S \to T$ quedan en 5/5 y 3/3, y los arcos $T \to S$ quedan en 0/6 y 0/5.
+**Cómo se usa en el proyecto.** El paso (2 ⇒ 3) **es** el procedimiento de `corte_minimo.py`: una búsqueda desde $s$ en la red residual final. El caso manual lo ilustra completo: los arcos $S \to T$ quedan en 5/5 y 3/3, y los arcos $T \to S$ quedan en 0/6 y 0/5.
 
 **Teorema de integralidad.** Si todas las capacidades son enteras, existe un flujo máximo con todos los $x(u,v)$ enteros, y Ford–Fulkerson/Edmonds–Karp lo encuentran. Esto importa para el modelo: los paquetes no se fraccionan.
 
@@ -112,40 +112,40 @@ En consecuencia, **el valor del flujo máximo es igual a la capacidad del corte 
 
 Reglas generales: solo biblioteca estándar; ninguna función modifica el objeto `network`; los vecinos se recorren en orden lexicográfico; todas las funciones llevan docstring con propósito, entradas, salidas e invariantes.
 
-### 7.1 `core/max_flow.py`
+### 7.1 `core/flujo_maximo.py`
 
 | Función | Entrada | Salida | Responsabilidad |
 | --- | --- | --- | --- |
-| `build_residual(network)` | Red | `dict[str, dict[str, int]]` | Crea $G_x$ para $x=0$: `res[u][v] = c(u,v)` y `res[v][u] = 0` por cada arco **activo**. Incluye como clave a **todos** los nodos, aunque no tengan arcos activos. |
-| `bfs_augmenting_path(res, s, t)` | Residual, terminales | `list[str]` o `None` | BFS sobre arcos con residual $> 0$. Devuelve el camino más corto $[s,\dots,t]$ o `None`. |
-| `bottleneck(res, path)` | Residual, camino | `int` | $\delta = \min$ de los residuales del camino. |
-| `augment(res, path, delta)` | Residual, camino, $\delta$ | `None` | Para cada $(u,v)$ del camino: `res[u][v] -= delta`, `res[v][u] += delta`. |
-| `edmonds_karp(network, s, t)` | Red, terminales | `(value, flows, iterations, res)` | Bucle principal. `flows[arc_id] = c - res[u][v]` para cada arco activo. |
+| `construir_residual(red)` | Red | `dict[str, dict[str, int]]` | Crea $G_x$ para $x=0$: `residual[u][v] = c(u,v)` y `residual[v][u] = 0` por cada arco **activo**. Incluye como clave a **todos** los nodos, aunque no tengan arcos activos. |
+| `buscar_camino(residual, s, t)` | Residual, terminales | `list[str]` o `None` | BFS sobre arcos con residual $> 0$. Devuelve el camino más corto $[s,\dots,t]$ o `None`. |
+| `cuello_botella(residual, camino)` | Residual, camino | `int` | $\delta = \min$ de los residuales del camino. |
+| `aumentar(residual, camino, delta)` | Residual, camino, $\delta$ | `None` | Para cada $(u,v)$ del camino: `residual[u][v] -= delta`, `residual[v][u] += delta`. |
+| `edmonds_karp(red, s, t)` | Red, terminales | `(valor, flujos, iteraciones, residual)` | Bucle principal. `flujos[id_arco] = c - residual[u][v]` para cada arco activo. |
 
 Pseudocódigo:
 
 ```
 EDMONDS-KARP(G, c, s, t):
-    res ← BUILD-RESIDUAL(G, c)
+    residual ← BUILD-RESIDUAL(G, c)
     valor ← 0 ; iteraciones ← []
     mientras verdadero:
-        P ← BFS-CAMINO(res, s, t)
+        P ← BFS-CAMINO(residual, s, t)
         si P = NULO: terminar el bucle
-        δ ← mín { res[u][v] : (u,v) arco consecutivo de P }
+        δ ← mín { residual[u][v] : (u,v) arco consecutivo de P }
         para cada (u,v) consecutivo en P:
-            res[u][v] ← res[u][v] − δ
-            res[v][u] ← res[v][u] + δ
+            residual[u][v] ← residual[u][v] − δ
+            residual[v][u] ← residual[v][u] + δ
         valor ← valor + δ
         agregar (k, P, δ, valor) a iteraciones
-    para cada arco activo (u,v):  x(u,v) ← c(u,v) − res[u][v]
-    devolver valor, x, iteraciones, res
+    para cada arco activo (u,v):  x(u,v) ← c(u,v) − residual[u][v]
+    devolver valor, x, iteraciones, residual
 
-BFS-CAMINO(res, s, t):
+BFS-CAMINO(residual, s, t):
     padre ← { s: NULO } ; cola ← [s]
     mientras cola no vacía:
         u ← sacar el primero de cola
         para cada v en vecinos de u, en orden lexicográfico:
-            si res[u][v] > 0 y v no está en padre:
+            si residual[u][v] > 0 y v no está en padre:
                 padre[v] ← u
                 si v = t: reconstruir el camino con padre y devolverlo
                 agregar v al final de cola
@@ -154,38 +154,38 @@ BFS-CAMINO(res, s, t):
 
 **Invariantes del bucle** (se comprueban en los tests):
 - I1. Antes y después de cada iteración, $x$ es un flujo factible (capacidad y conservación).
-- I2. Para cada arco activo $(u,v)$: `res[u][v] + res[v][u] == c(u,v)`.
+- I2. Para cada arco activo $(u,v)$: `residual[u][v] + residual[v][u] == c(u,v)`.
 - I3. `valor` es estrictamente creciente y cada $\delta \ge 1$.
 - I4. La longitud de los caminos encontrados nunca disminuye (propiedad de Edmonds–Karp).
 
-### 7.2 `core/min_cut.py`
+### 7.2 `core/corte_minimo.py`
 
 | Función | Entrada | Salida | Responsabilidad |
 | --- | --- | --- | --- |
-| `reachable_from(res, s)` | Residual final, origen | `set[str]` | BFS sobre residual $> 0$. Devuelve $S$. |
-| `min_cut(network, res, s)` | Red, residual final, origen | `dict` con `S`, `T`, `arcs`, `capacity` | $T = V \setminus S$. `arcs` = arcos activos con $u \in S$, $v \in T$. `capacity` = suma de sus capacidades. Listas ordenadas. |
+| `alcanzables_desde(residual, s)` | Residual final, origen | `set[str]` | BFS sobre residual $> 0$. Devuelve $S$. |
+| `corte_minimo(red, residual, s)` | Red, residual final, origen | `dict` con `S`, `T`, `arcs`, `capacity` | $T = V \setminus S$. `arcs` = arcos activos con $u \in S$, $v \in T$. `capacity` = suma de sus capacidades. Listas ordenadas. |
 
-### 7.3 `core/verify.py` (independiente del motor)
+### 7.3 `core/verificacion.py` (independiente del motor)
 
 Recalcula todo a partir de `flows` y de la red, sin usar la red residual. Así un error del motor no puede ocultarse a sí mismo.
 
 | Función | Comprueba |
 | --- | --- |
-| `check_capacity(network, flows)` | $0 \le x(u,v) \le c(u,v)$ y $x$ entero en cada arco activo. |
-| `check_conservation(network, flows, s, t)` | Entrada = salida en cada $v \ne s,t$. Devuelve además la tabla `node / in / out`. |
-| `flow_value(network, flows, s)` | $\lvert x\rvert$ según la fórmula del enunciado (salida neta de $s$). |
-| `cut_capacity(network, S)` | $c(S,T)$ según la definición. |
-| `verify_all(network, flows, S, s, t)` | Arma el bloque `checks` del resultado: las tres comprobaciones anteriores más `duality_ok` (`flow_value == cut_capacity`, $s \in S$, $t \notin S$). |
+| `verificar_capacidad(red, flujos)` | $0 \le x(u,v) \le c(u,v)$ y $x$ entero en cada arco activo. |
+| `verificar_conservacion(red, flujos, s, t)` | Entrada = salida en cada $v \ne s,t$. Devuelve además la tabla `node / in / out`. |
+| `valor_flujo(red, flujos, s)` | $\lvert x\rvert$ según la fórmula del enunciado (salida neta de $s$). |
+| `capacidad_corte(red, S)` | $c(S,T)$ según la definición. |
+| `verificar_todo(red, flujos, S, s, t)` | Arma el bloque `checks` del resultado: las tres comprobaciones anteriores más `duality_ok` (`valor_flujo == capacidad_corte`, $s \in S$, $t \notin S$). |
 
-### 7.4 `core/solver.py`
+### 7.4 `core/resolvedor.py`
 
-`solve(network, source, sink) -> dict` valida los terminales, llama a `edmonds_karp`, `min_cut` y `verify`, y arma el diccionario de resultado del §4 de la Fase 0.
+`resolver(red, origen, destino) -> dict` valida los terminales, llama a `edmonds_karp`, `corte_minimo` y `verificar_todo`, y arma el diccionario de resultado del §4 de la Fase 0.
 
 ### 7.5 Casos borde que el motor debe manejar
 
 | Caso | Comportamiento |
 | --- | --- |
-| $s = t$ o terminal inexistente | No llega al motor: `solve` devuelve el error `E_ST_EQUAL` / `E_UNKNOWN_NODE`. |
+| $s = t$ o terminal inexistente | No llega al motor: `resolver` devuelve el error `E_ST_EQUAL` / `E_UNKNOWN_NODE`. |
 | $t$ no alcanzable desde $s$ | `max_flow_value = 0`, `iterations = []`, $S$ = alcanzables desde $s$, `cut.arcs = []`, `cut.capacity = 0`. Sigue cumpliéndose $\lvert x\rvert = c(S,T)$. |
 | Arcos desactivados | No se cargan en la red residual. No aparecen en `flows` ni en el corte. |
 | Nodo que quedó sin arcos activos | Sigue en $V$. Queda en $T$ (salvo que sea $s$). |

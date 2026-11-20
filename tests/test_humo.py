@@ -9,11 +9,11 @@ class TestSmokeImports(unittest.TestCase):
     def test_imports(self):
         """Verifica la importación de core y sus submódulos sin depender de Streamlit."""
         import core
-        import core.edits
-        import core.network
-        import core.validation
+        import core.ediciones
+        import core.red
+        import core.validacion
 
         self.assertIsNotNone(core)
-        self.assertIsNotNone(core.network)
-        self.assertIsNotNone(core.validation)
-        self.assertIsNotNone(core.edits)
+        self.assertIsNotNone(core.red)
+        self.assertIsNotNone(core.validacion)
+        self.assertIsNotNone(core.ediciones)

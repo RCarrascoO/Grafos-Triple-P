@@ -93,7 +93,7 @@ Dos caminos dirigidos de $s$ a $t$:
 
 $P_1$ y $P_2$ no comparten ningún arco ni ningún vértice intermedio, de modo que son distintos bajo cualquier lectura de "caminos distintos".
 
-La aplicación comprueba estas mismas restricciones con código (`validate_network` en `core/validation.py`): para `data/initial_network.json` no reporta ningún error.
+La aplicación comprueba estas mismas restricciones con código (`validar_red` en `core/validacion.py`): para `data/initial_network.json` no reporta ningún error.
 
 ## 1.6 Interpretación
 

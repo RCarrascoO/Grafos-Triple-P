@@ -35,13 +35,13 @@ Grafos-Triple-P/
 ├── app.py                   # Interfaz Streamlit: streamlit run app.py
 ├── requirements.txt         # streamlit
 ├── core/                    # MOTOR PURO. Solo biblioteca estándar. No conoce a app.py.
-│   ├── network.py           # Carga del JSON. La red en memoria ES el diccionario del JSON (sin clases)
-│   ├── validation.py        # Invariantes topológicos y perfiles (initial / modified / manual)
-│   ├── edits.py             # Ediciones validadas: agregar, cambiar capacidad, desactivar, eliminar
-│   ├── max_flow.py          # Edmonds-Karp (BFS) + log de iteraciones
-│   ├── min_cut.py           # Partición (S, T) por alcanzabilidad en la red residual
-│   ├── verify.py            # Comprobaciones del apartado 5: capacidad, conservación, |x| = c(S,T)
-│   └── solver.py            # solve(): une motor, corte y verificación en el resultado del §4
+│   ├── red.py               # Carga del JSON. La red en memoria ES el diccionario del JSON (sin clases)
+│   ├── validacion.py        # Invariantes topológicos y perfiles (initial / modified / manual)
+│   ├── ediciones.py         # Ediciones validadas: agregar, cambiar capacidad, desactivar, eliminar
+│   ├── flujo_maximo.py      # Edmonds-Karp (BFS) + log de iteraciones
+│   ├── corte_minimo.py      # Partición (S, T) por alcanzabilidad en la red residual
+│   ├── verificacion.py      # Comprobaciones del apartado 5: capacidad, conservación, |x| = c(S,T)
+│   └── resolvedor.py        # resolver(): une motor, corte y verificación en el resultado del §4
 ├── data/                    # Redes en formato JSON (contrato §3)
 │   ├── figura1.json         # Red de la Figura 1 del PDF (|x| = 14)
 │   ├── manual_case.json     # Caso de verificación manual, 6 vértices (|x| = 8)
@@ -58,12 +58,12 @@ Grafos-Triple-P/
 
 | Módulo | Responsable | Revisa |
 | --- | --- | --- |
-| `core/network.py`, `data/initial_network.json`, este contrato | Daniel | Rodrigo |
-| `core/max_flow.py`, `core/min_cut.py`, `core/solver.py` | Rodrigo | Sebastián |
-| `core/validation.py`, `core/edits.py`, `app.py`, `requirements.txt`, README | Renato | Daniel |
-| `core/verify.py`, `tests/`, `data/manual_case.json`, `mod1.json`, `mod2.json` | Sebastián | Rodrigo |
+| `core/red.py`, `data/initial_network.json`, este contrato | Daniel | Rodrigo |
+| `core/flujo_maximo.py`, `core/corte_minimo.py`, `core/resolvedor.py` | Rodrigo | Sebastián |
+| `core/validacion.py`, `core/ediciones.py`, `app.py`, `requirements.txt`, README | Renato | Daniel |
+| `core/verificacion.py`, `tests/`, `data/manual_case.json`, `mod1.json`, `mod2.json` | Sebastián | Rodrigo |
 
-`validation.py` queda en `core/` aunque lo escriba Renato. Así el validador es testeable y los perfiles se aplican igual desde la UI y desde los tests.
+`validacion.py` queda en `core/` aunque lo escriba Renato. Así el validador es testeable y los perfiles se aplican igual desde la UI y desde los tests.
 
 ---
 
@@ -107,7 +107,7 @@ $E$ (del informe) = conjunto de arcos con `active: true`.
 `core` expone una sola función de alto nivel. La UI y los tests consumen exactamente este diccionario:
 
 ```python
-solve(network, source, sink) -> dict
+resolver(red, origen, destino) -> dict
 ```
 
 ```json
@@ -135,14 +135,14 @@ solve(network, source, sink) -> dict
 
 - `flows` contiene **todos los arcos activos originales**, incluidos los de flujo 0. Es la etiqueta $x(u,v)/c(u,v)$ que dibuja la UI.
 - `iterations` es el insumo del Derivado 2.3, que sirve para contrastar con el cálculo manual de Sebastián.
-- `checks` lo calcula `verify.py` con fórmulas independientes del algoritmo, es decir, no confía en el motor. Las tablas del apartado 5 del informe salen directamente de aquí.
+- `checks` lo calcula `verificacion.py` con fórmulas independientes del algoritmo, es decir, no confía en el motor. Las tablas del apartado 5 del informe salen directamente de aquí.
 - Los conjuntos y listas van **ordenados** para que la salida sea determinista y reproducible en las capturas.
 
 > El ejemplo de `flows` e `iterations` es ilustrativo. El orden y los caminos exactos dependen del orden de vecinos en el BFS. El valor **14** y el corte $S=\{O\}$ sí son únicos para la Figura 1.
 
 ---
 
-## 5. Reglas de validación (`core/validation.py`)
+## 5. Reglas de validación (`core/validacion.py`)
 
 Cada regla devuelve un código estable. La UI muestra el mensaje y los tests verifican el código.
 
@@ -201,7 +201,7 @@ Solo invariantes globales. El enunciado dice que "Las modificaciones podrán alt
 
 ## 7. Casos de aceptación de la Fase 0
 
-1. `data/figura1.json` cargado → `solve(·, "O", "T")` da `max_flow_value = 14`, `cut.S = ["O"]` y `cut.capacity = 14`.
+1. `data/figura1.json` cargado → `resolver(·, "O", "T")` da `max_flow_value = 14`, `cut.S = ["O"]` y `cut.capacity = 14`.
 2. Intentar agregar `A-O` sobre la Figura 1 → `E_RECIPROCAL`.
 3. Intentar agregar `A-A` → `E_LOOP`. Capacidad `0`, `13` o `2.5` → `E_CAPACITY`.
 4. `figura1.json` validado con perfil `initial` → falla con `E_V_RANGE` y `E_E_RANGE` (6 vértices y 7 arcos). Con perfil `manual` pasa.
@@ -210,4 +210,4 @@ Solo invariantes globales. El enunciado dice que "Las modificaciones podrán alt
 
 Aprobado este documento:
 - **Fase 1:** Daniel diseña `data/initial_network.json` y Sebastián diseña `data/manual_case.json`.
-- **En paralelo:** Renato crea el esqueleto de directorios y Rodrigo empieza `max_flow.py` contra `figura1.json`.
+- **En paralelo:** Renato crea el esqueleto de directorios y Rodrigo empieza `flujo_maximo.py` contra `figura1.json`.

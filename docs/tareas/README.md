@@ -12,7 +12,7 @@ Antes de empezar una tarea, leer el documento de fase que cita. Si se trabaja co
 ## Convenciones comunes (valen para todas las tareas)
 
 1. **La red en memoria es el diccionario del JSON.** No hay clases. Todas las funciones reciben `network: dict` con las claves `nodes`, `arcs`, `source`, `sink`, `profile` (contrato: `docs/fase0-stack-y-contrato.md` §3).
-2. **Arcos activos.** Para calcular se usa siempre `active_arcs(network)` de `core/network.py`. Los arcos con `"active": false` solo importan para las reglas de repetidos y recíprocos.
+2. **Arcos activos.** Para calcular se usa siempre `arcos_activos(red)` de `core/red.py`. Los arcos con `"active": false` solo importan para las reglas de repetidos y recíprocos.
 3. **Errores de validación.** Las funciones no lanzan excepciones: devuelven un **código** (`"E_LOOP"`, `"E_RECIPROCAL"`, …) o `None` si todo está bien. Los códigos están en `docs/fase0-stack-y-contrato.md` §5.
 4. **Orden determinista.** Al recorrer vecinos o devolver listas de nodos/arcos, usar `sorted(...)`.
 5. **Solo biblioteca estándar.** En `core/` y `tests/` no se importa nada externo. En `app.py` solo `streamlit`.
@@ -31,8 +31,8 @@ Antes de empezar una tarea, leer el documento de fase que cita. Si se trabaja co
 | 4 | 24–26 nov | Informe, QA y ensayo | R9–R11, S13–S14, N19, D3–D6 |
 
 Dependencias que bloquean:
-- Todo `core/` necesita **D1 y D2** (`load_network`, `active_arcs`).
-- **R8** (`solve`) necesita R5, R7 y **S6** (`verify_all`).
+- Todo `core/` necesita **D1 y D2** (`cargar_red`, `arcos_activos`).
+- **R8** (`resolver`) necesita R5, R7 y **S6** (`verificar_todo`).
 - **N13** en adelante (botón Calcular) necesita **R8**. Mientras tanto la interfaz se puede construir y probar dibujando la red sin resultados.
 - **S8 y S11** (tests de ediciones y validación) necesitan N2–N8.
 - **S12** (`mod1.json`, `mod2.json`) necesita que el equipo elija las dos modificaciones.
@@ -41,8 +41,8 @@ Dependencias que bloquean:
 
 | Id | Tarea | Listo cuando |
 | --- | --- | --- |
-| D1 | Crear `load_network(path) -> dict` en `core/network.py`. Abre el archivo con `encoding="utf-8"` y devuelve `json.load`. | Carga los tres JSON de `data/` y devuelve un `dict` con `nodes` y `arcs`. |
-| D2 | Crear `active_arcs(network) -> list[dict]` en `core/network.py`. Devuelve los arcos con `active == True`. | En `figura1.json` devuelve 7 arcos; si se pone uno en `false`, devuelve 6. |
+| D1 | Crear `cargar_red(camino) -> dict` en `core/red.py`. Abre el archivo con `encoding="utf-8"` y devuelve `json.load`. | Carga los tres JSON de `data/` y devuelve un `dict` con `nodes` y `arcs`. |
+| D2 | Crear `arcos_activos(red) -> list[dict]` en `core/red.py`. Devuelve los arcos con `active == True`. | En `figura1.json` devuelve 7 arcos; si se pone uno en `false`, devuelve 6. |
 | D3 | Redactar el Apartado 1 del informe a partir de `docs/fase1-diseno-redes.md` §1. | Contiene $V$, $E$, tabla de $c$, tabla de grados, auditoría de restricciones e interpretación. |
 | D4 | Escribir el glosario de notación común ($G$, $V$, $E$, $c$, $x$, $\lvert x\rvert$, $S$, $T$, $c(S,T)$, red residual) y revisar que las secciones de Rodrigo y Sebastián lo usen. | Las cinco secciones del informe usan los mismos símbolos que el enunciado. |
 | D5 | Conseguir la aprobación del equipo de las decisiones D1–D3 de la Fase 0 y del frontend. | Decisión anotada en `docs/fase0-stack-y-contrato.md`. |

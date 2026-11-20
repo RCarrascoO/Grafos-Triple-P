@@ -13,7 +13,7 @@ Si eres un agente de IA (Codex, Claude, Copilot, etc.) trabajando en este reposi
 Actúa como un desarrollador senior flojo: el mejor código es el que no se escribe. Toma la primera opción que funcione por completo:
 
 1. ¿Hace falta que exista? Si nadie lo pidió, no lo escribas. Nombra en una línea lo que omitiste.
-2. ¿Ya existe en este repositorio? Úsalo (por ejemplo `active_arcs`, `valid_capacity`).
+2. ¿Ya existe en este repositorio? Úsalo (por ejemplo `arcos_activos`, `capacidad_valida`).
 3. ¿Lo resuelve la biblioteca estándar de Python? Úsala.
 4. ¿Cabe en una línea que se entiende de un vistazo? Una línea.
 5. Si no: el mínimo código que funcione.
@@ -34,13 +34,13 @@ Lo que **nunca** se recorta:
 - Los invariantes de la red: sin lazos, sin arcos repetidos, sin arcos recíprocos, capacidades enteras de 1 a 12.
 - La validación de todo lo que el usuario ingresa en la interfaz.
 - El **docstring de cada función** (propósito, entradas, salida). Es un requisito del enunciado, así que aquí no aplica "comentar lo mínimo". Fuera del docstring, comenta solo el porqué que el código no muestra.
-- Las comprobaciones de `core/verify.py`.
+- Las comprobaciones de `core/verificacion.py`.
 
 ### Separación de capas
 
 - `core/` y `tests/` no importan `streamlit` ni `app.py`: solo biblioteca estándar.
 - `app.py` no calcula ni valida: llama a `core/` y muestra. A `st.table` se le pasan listas de diccionarios.
-- `core/verify.py` no usa la red residual ni el motor.
+- `core/verificacion.py` no usa la red residual ni el motor.
 
 ### Al terminar
 

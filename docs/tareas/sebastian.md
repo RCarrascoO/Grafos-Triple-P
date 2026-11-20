@@ -2,10 +2,10 @@
 
 **Leer antes:** `docs/fase1-diseno-redes.md` (§2 caso manual, §1.6 y §1.7 valores esperados), `docs/fase2-algoritmo.md` (§7.3 y §8) y las convenciones de `docs/tareas/README.md`.
 
-**Archivos propios:** `core/verify.py`, `tests/`, `data/mod1.json`, `data/mod2.json`.
+**Archivos propios:** `core/verificacion.py`, `tests/`, `data/mod1.json`, `data/mod2.json`.
 **Imports permitidos:** biblioteca estándar (`unittest`, `itertools`, `random`, `copy`) y los módulos de `core/`.
 
-Regla de `verify.py`: calcula todo desde `flows` y la red, **sin usar la red residual ni el motor**. Su trabajo es comprobar al motor, así que no puede depender de él.
+Regla de `verificacion.py`: calcula todo desde `flows` y la red, **sin usar la red residual ni el motor**. Su trabajo es comprobar al motor, así que no puede depender de él.
 
 `flows` es un diccionario `{arc_id: flujo}` con los arcos activos.
 
@@ -23,31 +23,31 @@ Con `data/manual_case.json` y **sin mirar** `docs/fase1-diseno-redes.md` §2.2�
 
 ---
 
-## Verificación — `core/verify.py`
+## Verificación — `core/verificacion.py`
 
-### S2 — `check_capacity(network, flows) -> bool`
+### S2 — `verificar_capacidad(red, flujos) -> bool`
 `True` si para cada arco activo el flujo es un entero y `0 <= flows[id] <= capacity`.
 
 **Listo cuando:** da `True` con el flujo de la Figura 1 y `False` si se cambia un flujo a `capacity + 1` o a `-1`.
 
-### S3 — `check_conservation(network, flows, s, t) -> tuple[bool, list]`
+### S3 — `verificar_conservacion(red, flujos, s, t) -> tuple[bool, list]`
 Para cada nodo distinto de `s` y `t`: suma lo que entra y lo que sale por arcos activos.
 - Devuelve `(ok, tabla)`, donde `tabla` es una lista de `{"node": id, "in": int, "out": int}` ordenada por id.
 - `ok` es `True` si `in == out` en todas las filas.
 
 **Listo cuando:** con el flujo de `docs/fase1-diseno-redes.md` §2.3 devuelve `True` y la fila de `a` es `in=3, out=3`.
 
-### S4 — `flow_value(network, flows, s) -> int`
+### S4 — `valor_flujo(red, flujos, s) -> int`
 $|x|$ según el enunciado: suma de flujos que salen de `s` menos suma de flujos que entran a `s`.
 
 **Listo cuando:** devuelve 14 para la Figura 1 y 8 para el caso manual.
 
-### S5 — `cut_capacity(network, S) -> int`
+### S5 — `capacidad_corte(red, S) -> int`
 Suma de capacidades de los arcos activos con `from` en `S` y `to` fuera de `S`.
 
 **Listo cuando:** en la red inicial con $S = \{\text{STG, RAN, TAL, CHI, CON, LAN}\}$ devuelve 20; con $S = \{\text{STG}\}$ devuelve 28.
 
-### S6 — `verify_all(network, flows, S, s, t) -> dict`
+### S6 — `verificar_todo(red, flujos, S, s, t) -> dict`
 Une S2–S5 y devuelve el bloque `checks` del contrato:
 
 ```python
@@ -55,7 +55,7 @@ Une S2–S5 y devuelve el bloque `checks` del contrato:
   "capacity_ok": bool,
   "conservation_ok": bool,
   "conservation_table": list,
-  "duality_ok": bool,   # flow_value == cut_capacity, s está en S y t no está en S
+  "duality_ok": bool,   # valor_flujo == capacidad_corte, s está en S y t no está en S
 }
 ```
 
@@ -68,7 +68,7 @@ Une S2–S5 y devuelve el bloque `checks` del contrato:
 Todas se ejecutan con `python -m unittest`.
 
 ### S7 — `tests/test_known_cases.py`
-Un test por red que compare `solve` con los valores esperados:
+Un test por red que compare `resolver` con los valores esperados:
 
 | Red | $\lvert x\rvert$ | Iteraciones | $S$ |
 | --- | --- | --- | --- |
@@ -81,24 +81,24 @@ En cada uno comprobar además que los tres `checks` son `True` y que `max_flow_v
 **Listo cuando:** los tres tests pasan.
 
 ### S8 — `tests/test_modifications.py`
-Sobre una copia (`copy.deepcopy`) de la red inicial, usando las funciones de `core/edits.py`:
-- `set_active("CON-TEM", False)` → flujo 13.
-- `set_capacity("CON-TEM", 9)` → flujo 21.
-- `add_arc("CON", "VAL", 8)` → flujo 23 y corte `["OSO-PMO", "VAL-PMO"]`.
+Sobre una copia (`copy.deepcopy`) de la red inicial, usando las funciones de `core/ediciones.py`:
+- `cambiar_estado("CON-TEM", False)` → flujo 13.
+- `cambiar_capacidad("CON-TEM", 9)` → flujo 21.
+- `agregar_arco("CON", "VAL", 8)` → flujo 23 y corte `["OSO-PMO", "VAL-PMO"]`.
 
 **Necesita N6–N8.** **Listo cuando:** los tres tests pasan.
 
 ### S9 — `tests/test_edge_cases.py`
 - Destino inalcanzable (desactivar `VAL-PMO` y `OSO-PMO`): flujo 0, `iterations == []`, capacidad del corte 0.
-- `solve(red, "STG", "STG")` devuelve `{"error": "E_ST_EQUAL"}`.
+- `resolver(red, "STG", "STG")` devuelve `{"error": "E_ST_EQUAL"}`.
 - Un arco desactivado no aparece en `flows`.
 
 **Listo cuando:** los tres tests pasan.
 
 ### S10 — `tests/test_brute_force.py`
-- Función auxiliar `brute_force_min_cut(network, s, t) -> int`: prueba todos los subconjuntos de nodos intermedios con `itertools.combinations`, arma $S$ = `{s}` más el subconjunto, y devuelve la menor `cut_capacity`.
+- Función auxiliar `brute_force_min_cut(network, s, t) -> int`: prueba todos los subconjuntos de nodos intermedios con `itertools.combinations`, arma $S$ = `{s}` más el subconjunto, y devuelve la menor `capacidad_corte`.
 - Test: para los tres JSON, ese mínimo es igual a `max_flow_value`.
-- Test: lo mismo para 20 redes aleatorias de 6 nodos generadas con `random.seed(1)` y `add_arc` (así salen válidas por construcción).
+- Test: lo mismo para 20 redes aleatorias de 6 nodos generadas con `random.seed(1)` y `agregar_arco` (así salen válidas por construcción).
 
 **Listo cuando:** los tests pasan. Es la prueba más fuerte de que el motor es correcto, porque no usa el algoritmo para comprobarlo.
 
@@ -115,7 +115,7 @@ Probar los casos "listo cuando" de las tareas N2, N3, N5, N6 y N7 de Renato (có
 - Con el equipo, elegir dos de las candidatas de `docs/fase1-diseno-redes.md` §1.7 (u otras). Conviene que entre las dos usen las tres operaciones: desactivar, cambiar capacidad y agregar.
 - Crear `data/mod1.json` y `data/mod2.json` copiando `initial_network.json`, aplicando los cambios a mano y poniendo `"profile": "modified"`.
 
-**Listo cuando:** ambos archivos cargan desde el selector de la interfaz y `validate_network` devuelve `[]`.
+**Listo cuando:** ambos archivos cargan desde el selector de la interfaz y `validar_red` devuelve `[]`.
 
 ### S13 — Resultados, capturas y secciones 4 y 5 del informe
 Para el caso manual y las tres configuraciones:
