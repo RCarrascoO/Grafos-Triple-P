@@ -17,15 +17,28 @@ En desarrollo. El diseño (fases 0 a 2), las redes de datos y las tareas están 
 
 ## Cómo ejecutar
 
-```bash
-pip install -r requirements.txt
-```
+Crear un entorno virtual e instalar Streamlit (recomendado, evita conflictos con Python del sistema):
 
 ```bash
+python -m venv .venv
+```
+
+Activar el entorno según la terminal:
+
+- **bash / zsh (Linux/macOS):** `source .venv/bin/activate`
+- **fish (Linux/macOS):** `source .venv/bin/activate.fish`
+- **PowerShell (Windows):** `.venv\Scripts\Activate.ps1`
+
+Instalar y ejecutar:
+
+```bash
+pip install -r requirements.txt
 streamlit run app.py
 ```
 
-Pruebas:
+*(Alternativa sin activar el entorno en cualquier shell Linux/macOS: `.venv/bin/streamlit run app.py`.)*
+
+Pruebas (no requieren Streamlit, solo biblioteca estándar):
 
 ```bash
 python -m unittest

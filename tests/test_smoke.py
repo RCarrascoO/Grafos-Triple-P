@@ -1,16 +1,19 @@
-"""Prueba de humo para verificar que los paquetes y módulos importan sin errores."""
+"""Prueba de humo para verificar que los paquetes de core importan sin errores."""
+
 import unittest
 
 
 class TestSmokeImports(unittest.TestCase):
-    """Comprueba que el esqueleto y los módulos base no generan errores de importación."""
+    """Comprueba que los módulos base de core importan usando solo biblioteca estándar."""
 
     def test_imports(self):
-        """Verifica la importación de app, core y sus submódulos."""
-        import app
+        """Verifica la importación de core y sus submódulos sin depender de Streamlit."""
         import core
         import core.edits
+        import core.network
         import core.validation
 
         self.assertIsNotNone(core)
-        self.assertIsNotNone(app)
+        self.assertIsNotNone(core.network)
+        self.assertIsNotNone(core.validation)
+        self.assertIsNotNone(core.edits)

@@ -1,5 +1,7 @@
 """Validaciones de invariantes y perfiles para redes dirigidas."""
 
+from core.network import active_arcs
+
 
 def valid_capacity(value):
     """Valida una capacidad; recibe cualquier value y devuelve un booleano."""
@@ -33,9 +35,8 @@ def count_paths(network, s, t, limit=2):
     if s not in node_ids or t not in node_ids:
         return 0
     neighbors = {}
-    for arc in network["arcs"]:
-        if arc.get("active") is True:
-            neighbors.setdefault(arc["from"], []).append(arc["to"])
+    for arc in active_arcs(network):
+        neighbors.setdefault(arc["from"], []).append(arc["to"])
     for values in neighbors.values():
         values.sort()
 
@@ -87,14 +88,14 @@ def validate_network(network):
         add_error("E_ST_EQUAL")
 
     profile = network["profile"]
-    active_arcs = [arc for arc in arcs if arc.get("active") is True]
+    actives = active_arcs(network)
     if profile == "initial":
         if not 10 <= len(node_ids) <= 12:
             add_error("E_V_RANGE")
-        if not 15 <= len(active_arcs) <= 20:
+        if not 15 <= len(actives) <= 20:
             add_error("E_E_RANGE")
         incident = {node_id: False for node_id in node_set}
-        for arc in active_arcs:
+        for arc in actives:
             if arc["from"] in incident:
                 incident[arc["from"]] = True
             if arc["to"] in incident:

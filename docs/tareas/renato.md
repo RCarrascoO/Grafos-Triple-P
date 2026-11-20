@@ -92,18 +92,18 @@ Orden obligatorio dentro de `app.py`:
 
 Así el dibujo siempre refleja el estado ya actualizado por el clic.
 
-### N10 — Página base y estado
-- `st.set_page_config(layout="wide")`.
-- Si `"network"` no está en `st.session_state`: cargar `data/initial_network.json` con `load_network` y poner `st.session_state.result = None`.
-- Dos zonas: `st.sidebar` para los controles y la zona principal para el dibujo y los resultados.
+### N10 — Página base y estado [COMPLETO]
+- [x] `st.set_page_config(layout="wide")`.
+- [x] Si `"network"` no está en `st.session_state`: cargar `data/initial_network.json` con `load_network` y poner `st.session_state.result = None`.
+- [x] Dos zonas: `st.sidebar` para los controles y la zona principal para el dibujo y los resultados.
 
 **Listo cuando:** la página abre con la barra lateral y, al interactuar con cualquier control, la red no se vuelve a cargar desde el archivo.
 
-### N11 — `network_dot(network, result=None) -> str`
-Devuelve la red como texto en lenguaje DOT de Graphviz. Se muestra con `st.graphviz_chart(network_dot(...))`.
-- Encabezado: `digraph { rankdir=LR; node [shape=circle, style=filled, fillcolor=white];`
-- Una línea por nodo: `"STG" [label="STG\nSantiago"];`
-- Una línea por arco: `"STG" -> "RAN" [label="10"];` con la capacidad como etiqueta cuando `result` es `None`.
+### N11 — `network_dot(network, result=None) -> str` [COMPLETO]
+- [x] Devuelve la red como texto en lenguaje DOT de Graphviz. Se muestra con `st.graphviz_chart(network_dot(...))`.
+- [x] Encabezado: `digraph { rankdir=LR; node [shape=circle, style=filled, fillcolor=white];`
+- [x] Una línea por nodo: `"STG" [label="STG\nSantiago"];`
+- [x] Una línea por arco: `"STG" -> "RAN" [label="10"];` con la capacidad como etiqueta cuando `result` es `None`.
 
 **Listo cuando:** `initial_network.json` se ve completa, de izquierda a derecha, con las 19 flechas en el sentido correcto y sus capacidades.
 
@@ -135,29 +135,29 @@ A `st.table` se le pasa una **lista de diccionarios**. No se importa `pandas`.
 
 **Listo cuando:** para la red inicial muestra `20` en ambas métricas y 9 iteraciones.
 
-### N15 — Panel "Editar ruta existente"
+### N15 — Panel "Editar ruta existente" [EN PROGRESO — falta verificar recálculo con R8]
 En la barra lateral:
-- `st.selectbox` con los ids de los arcos.
-- `st.number_input("Capacidad", min_value=1, max_value=12, step=1)` + botón "Cambiar capacidad" → `set_capacity`.
-- Botón "Desactivar / Reactivar" → `set_active`.
-- Botón "Eliminar" → `remove_arc`.
-- Después de **cualquier** edición: `st.session_state.result = None`. Así nunca queda en pantalla un resultado que no corresponde a la red.
-- Si la función devuelve un código, mostrar el mensaje (N18).
+- [x] `st.selectbox` con los ids de los arcos.
+- [x] `st.number_input("Capacidad", min_value=1, max_value=12, step=1)` + botón "Cambiar capacidad" → `set_capacity`.
+- [x] Botón "Desactivar / Reactivar" → `set_active`.
+- [x] Botón "Eliminar" → `remove_arc`.
+- [x] Después de **cualquier** edición: `st.session_state.result = None`. Así nunca queda en pantalla un resultado que no corresponde a la red.
+- [x] Si la función devuelve un código, mostrar el mensaje (N18).
 
 **Listo cuando:** desactivar `CON-TEM` y recalcular da flujo 13.
 
-### N16 — Panel "Agregar ruta"
-Dos `st.selectbox` (desde, hasta), un `st.number_input` de capacidad (1 a 12) y el botón "Agregar" → `add_arc`. Si devuelve un código, mostrar el mensaje (N18). Si no, `result = None`.
+### N16 — Panel "Agregar ruta" [EN PROGRESO — falta verificar recálculo con R8]
+- [x] Dos `st.selectbox` (desde, hasta), un `st.number_input` de capacidad (1 a 12) y el botón "Agregar" → `add_arc`. Si devuelve un código, mostrar el mensaje (N18). Si no, `result = None`.
 
 **Listo cuando:** agregar `CON → VAL` con 8 y recalcular da flujo 23. Intentar `TEM → CON` muestra el aviso de arco recíproco. Intentar `CON → CON` muestra el aviso de lazo.
 
-### N17 — Selector de configuraciones
-`st.selectbox` con: "Red inicial", "Modificación 1", "Modificación 2", "Caso manual", "Figura 1", y un botón "Cargar". Al cargar: `load_network` del JSON correspondiente y `result = None`. Si el archivo no existe todavía, mostrar un aviso con `st.warning`.
+### N17 — Selector de configuraciones [EN PROGRESO — faltan selectores s/t de N13]
+- [x] `st.selectbox` con: "Red inicial", "Modificación 1", "Modificación 2", "Caso manual", "Figura 1", y un botón "Cargar". Al cargar: `load_network` del JSON correspondiente y `result = None`. Si el archivo no existe todavía, mostrar un aviso con `st.warning`.
 
 **Listo cuando:** se puede pasar de una red a otra sin reiniciar la aplicación, y los selectores de origen y destino muestran los nodos de la red cargada.
 
-### N18 — `ERROR_MESSAGES`
-Un diccionario `código → texto en español`. Los avisos se muestran con `st.warning(ERROR_MESSAGES[code])`. Ejemplo: `"E_RECIPROCAL": "Ya existe la ruta en sentido contrario. Elimínela antes de crear esta."`
+### N18 — `ERROR_MESSAGES` [COMPLETO]
+- [x] Un diccionario `código → texto en español`. Los avisos se muestran con `st.warning(ERROR_MESSAGES[code])`. Ejemplo: `"E_RECIPROCAL": "Ya existe la ruta en sentido contrario. Elimínela antes de crear esta."`
 
 **Listo cuando:** todos los códigos de `docs/fase0-stack-y-contrato.md` §5 tienen mensaje.
 
