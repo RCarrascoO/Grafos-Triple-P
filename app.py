@@ -4,6 +4,7 @@ import streamlit as st
 
 from core.ediciones import agregar_arco, eliminar_arco, cambiar_estado, cambiar_capacidad
 from core.red import cargar_red
+from core.resolvedor import resolver
 
 ARCHIVOS_RED = {
     "Red inicial": "data/initial_network.json",
@@ -31,10 +32,20 @@ MENSAJES_ERROR = {
 def red_a_dot(red, resultado=None) -> str:
     """Genera texto DOT de Graphviz; recibe red y resultado opcional, y devuelve un str."""
     lineas = ["digraph { rankdir=LR; node [shape=circle, style=filled, fillcolor=white];"]
+    nodos_s = set(resultado["cut"]["S"]) if resultado is not None else set()
+    nodos_t = set(resultado["cut"]["T"]) if resultado is not None else set()
     for nodo in red["nodes"]:
-        lineas.append(f'  "{nodo["id"]}" [label="{nodo["id"]}\\n{nodo["label"]}"];')
+        fillcolor = "lightblue" if nodo["id"] in nodos_s else "lightyellow" if nodo["id"] in nodos_t else "white"
+        lineas.append(f'  "{nodo["id"]}" [label="{nodo["id"]}\\n{nodo["label"]}", fillcolor="{fillcolor}"];')
+    arcos_corte = set(resultado["cut"]["arcs"]) if resultado is not None else set()
     for arco in red["arcs"]:
-        atributos = f'label="{arco["capacity"]}"' + ("" if arco["active"] else ", style=dashed, color=gray")
+        if not arco["active"]:
+            atributos = f'label="{arco["capacity"]}", style=dashed, color=gray'
+        else:
+            etiqueta = f'{resultado["flows"][arco["id"]]}/{arco["capacity"]}' if resultado is not None else f'{arco["capacity"]}'
+            atributos = f'label="{etiqueta}"'
+            if resultado is not None and arco["id"] in arcos_corte:
+                atributos += ", color=red, penwidth=3"
         lineas.append(f'  "{arco["from"]}" -> "{arco["to"]}" [{atributos}];')
     lineas.append("}")
     return "\n".join(lineas)
@@ -46,6 +57,7 @@ def main() -> None:
     st.set_page_config(page_title="Simulador de Red de Distribución", layout="wide")
     if "red" not in st.session_state:
         st.session_state.red = cargar_red(ARCHIVOS_RED["Red inicial"])
+    if "resultado" not in st.session_state:
         st.session_state.resultado = None
 
     red = st.session_state.red
@@ -61,6 +73,18 @@ def main() -> None:
                 st.rerun()
             except FileNotFoundError:
                 st.warning(f"El archivo {ARCHIVOS_RED[nombre_elegido]} todavía no existe.")
+
+        st.header("Flujo máximo")
+        ids_nodos = [nodo["id"] for nodo in red["nodes"]]
+        origen = st.selectbox("Origen", ids_nodos, index=ids_nodos.index(red["source"]))
+        destino = st.selectbox("Destino", ids_nodos, index=ids_nodos.index(red["sink"]))
+        if st.button("Calcular"):
+            res = resolver(red, origen, destino)
+            if "error" in res:
+                st.session_state.resultado = None
+                st.warning(MENSAJES_ERROR[res["error"]])
+            else:
+                st.session_state.resultado = res
 
         st.divider()
         st.header("Editar ruta existente")
@@ -100,9 +124,8 @@ def main() -> None:
 
         st.divider()
         st.header("Agregar ruta")
-        ids_nodos = [nodo["id"] for nodo in red["nodes"]]
-        desde = st.selectbox("Desde", ids_nodos, key="add_from")
-        hasta = st.selectbox("Hasta", ids_nodos, key="add_to")
+        desde = st.selectbox("Desde", ids_nodos)
+        hasta = st.selectbox("Hasta", ids_nodos)
         cap_nueva = st.number_input("Capacidad", min_value=1, max_value=12, step=1, key="cap_nueva")
         if st.button("Agregar"):
             error = agregar_arco(red, desde, hasta, int(cap_nueva))
@@ -116,6 +139,33 @@ def main() -> None:
     st.title("Simulador de Red de Distribución de Paquetes")
     st.subheader(red["name"])
     st.graphviz_chart(red_a_dot(red, st.session_state.resultado))
+    if st.session_state.resultado is not None:
+        res = st.session_state.resultado
+        st.caption("Nodos: azul = conjunto S, amarillo = conjunto T. Arcos: rojo = corte mínimo, gris punteado = ruta desactivada.")
+        st.subheader(f"Resultado: {res['source']} → {res['sink']}")
+        c1, c2 = st.columns(2)
+        c1.metric("Flujo máximo (|x|)", res["max_flow_value"])
+        c2.metric("Capacidad del corte c(S,T)", res["cut"]["capacity"])
+        arcos_corte = res["cut"]["arcs"] if res["cut"]["arcs"] else ["ninguno"]
+        st.caption(f"S = {', '.join(res['cut']['S'])}; T = {', '.join(res['cut']['T'])}; arcos de corte: {', '.join(arcos_corte)}.")
+        st.table([
+            {"arco": arco["id"], "flujo": str(res["flows"][arco["id"]]) if arco["active"] else "—", "capacidad": arco["capacity"]}
+            for arco in red["arcs"]
+        ])
+        st.table(res["checks"]["conservation_table"])
+        checks = res["checks"]
+        st.write(f"capacity_ok: {checks['capacity_ok']}")
+        st.write(f"conservation_ok: {checks['conservation_ok']}")
+        st.write(f"duality_ok: {checks['duality_ok']}")
+        if res["iterations"]:
+            st.table([
+                {"k": it["k"], "Camino": " → ".join(it["path"]), "Cuello": it["bottleneck"], "Acumulado": it["value_after"]}
+                for it in res["iterations"]
+            ])
+        else:
+            st.caption("No hay camino entre el origen y el destino: flujo máximo 0.")
+    else:
+        st.caption("Arcos en gris punteado = ruta desactivada.")
 
 
 if __name__ == "__main__":
