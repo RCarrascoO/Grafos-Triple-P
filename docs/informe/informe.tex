@@ -1,0 +1,372 @@
+\documentclass[12pt, a4paper]{article}
+
+% Idioma y codificación (compatible con pdfLaTeX en Overleaf)
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish, provide=*]{babel}
+
+% Márgenes
+\usepackage[top=2.5cm, bottom=2.5cm, left=3cm, right=2.5cm]{geometry}
+
+% Imágenes y figuras
+\usepackage{graphicx}
+\usepackage{float}
+
+% Tablas
+\usepackage{booktabs}
+\usepackage{array}
+
+% Matemáticas
+\usepackage{amsmath, amssymb}
+
+% Código fuente y colores
+\usepackage{listings}
+\usepackage{xcolor}
+
+% Enlaces (cargar al final del preámbulo)
+\usepackage[colorlinks=true, linkcolor=blue, urlcolor=blue, citecolor=blue]{hyperref}
+
+% Configuración de listings para Python
+\lstset{
+  language=Python,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{blue},
+  commentstyle=\color{green!50!black},
+  stringstyle=\color{red},
+  breaklines=true,
+  frame=single,
+  numbers=left,
+  numberstyle=\tiny,
+  tabsize=4,
+  showstringspaces=false
+}
+
+% Macro auxiliar para marcar secciones pendientes
+\newcommand{\poragregar}[2]{%
+  \begin{center}
+    \fcolorbox{orange!80!black}{orange!10}{%
+      \begin{minipage}{0.92\textwidth}
+        \vspace{4pt}
+        \textbf{[Parte por agregar --- Responsable: #1]}\\[4pt]
+        #2
+        \vspace{4pt}
+      \end{minipage}%
+    }
+  \end{center}
+}
+
+\begin{document}
+
+% ==============================================================================
+% PORTADA
+% ==============================================================================
+\begin{titlepage}
+  \centering
+  \vspace*{2cm}
+  {\Large \textsc{Universidad Católica de Temuco}}\\[0.4cm]
+  {\large Teoría de Grafos --- INFO1158}\\[2.2cm]
+
+  {\huge \textbf{Proyecto 2: Simulador de una red de distribución de paquetes}}\\[0.6cm]
+  {\large Informe Técnico: Flujo Máximo y Corte Mínimo}\\[2.5cm]
+
+  \begin{flushleft}
+    \hspace{2.2cm}\textbf{Integrantes:}\\
+    \hspace{2.8cm}Daniel Prado\\
+    \hspace{2.8cm}Rodrigo Pedraza\\
+    \hspace{2.8cm}Renato Carrasco\\
+    \hspace{2.8cm}Sebastián Pereda\\[1cm]
+    \hspace{2.2cm}\textbf{Repositorio:} \url{https://github.com/RCarrascoO/Grafos-Triple-P}\\
+    \hspace{2.2cm}\textbf{Fecha de entrega:} 26 de noviembre de 2026
+  \end{flushleft}
+
+  \vfill
+  {\small \textit{Nota de ejecución y dependencias:} véase \texttt{README.md} en el repositorio.}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% ==============================================================================
+% NOTACIÓN COMÚN (docs/informe/00-notacion.md)
+% ==============================================================================
+\section*{Notación común del informe}
+\addcontentsline{toc}{section}{Notación común del informe}
+
+Las cinco secciones de este informe utilizan los siguientes símbolos y definiciones estándar:
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{lp{10.5cm}}
+    \toprule
+    \textbf{Símbolo} & \textbf{Significado} \\
+    \midrule
+    $G = (V, E)$ & Red dirigida: $V$ vértices (centros logísticos) y $E$ arcos (rutas activas). \\
+    $(u,v)$ & Arco dirigido de $u$ a $v$. \\
+    $\lvert V\rvert$, $\lvert E\rvert$ & Número de vértices y de arcos. \\
+    $c$ & Función de capacidad $c: E \to \{1, 2, \dots, 12\}$ en paquetes por hora. \\
+    $s$, $t$ & Origen y destino, con $s \ne t$. \\
+    $\deg^+(v)$, $\deg^-(v)$ & Grado de salida y grado de entrada de $v$. \\
+    $x$ & Flujo: asigna a cada arco un valor $x(u,v)$. \\
+    $x(u,v)/c(u,v)$ & Etiqueta ``flujo/capacidad'' de un arco en tablas y figuras. \\
+    $\lvert x\rvert$ & Valor del flujo: cantidad neta que sale del origen $s$. \\
+    $x^*$ & Un flujo máximo; $\lvert x^*\rvert$ es su valor. \\
+    $S$, $T$ & Partición de $V$ que define un corte ($V = S \cup T$, $S \cap T = \emptyset$, $s \in S$, $t \in T$). \\
+    $c(S,T)$ & Capacidad del corte $(S,T)$. \\
+    $G_x$ & Red residual de $G$ respecto del flujo $x$. \\
+    $c_x(u,v)$ & Capacidad residual de $(u,v)$ en $G_x$. \\
+    $\delta$ & Cuello de botella de un camino aumentante (menor capacidad residual). \\
+    \bottomrule
+  \end{tabular}
+  \caption{Glosario de notación común del informe.}
+  \label{tab:notacion}
+\end{table}
+
+% ==============================================================================
+% SECCIÓN 1: MODELACIÓN MATEMÁTICA (docs/informe/01-modelacion.md - Daniel Prado)
+% ==============================================================================
+\section{Modelación matemática de la red}
+
+\subsection{Significado del modelo}
+
+La empresa distribuye paquetes a lo largo del corredor \textbf{Santiago $\to$ Puerto Montt}. La configuración inicial se modela como una red dirigida $G = (V, E)$ con una función de capacidad $c$, un origen $s$ y un destino $t$:
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{lp{10.5cm}}
+    \toprule
+    \textbf{Elemento del modelo} & \textbf{Significado en el problema} \\
+    \midrule
+    Vértice $v \in V$ & Un centro logístico, ubicado en una ciudad. \\
+    Arco $(u,v) \in E$ & Una ruta de transporte de sentido único, del centro $u$ al centro $v$. \\
+    Capacidad $c(u,v)$ & Máximo de paquetes por hora que admite la ruta $(u,v)$. \\
+    Origen $s$ & Centro desde el que se despachan los paquetes: Santiago. \\
+    Destino $t$ & Centro al que deben llegar: Puerto Montt. \\
+    Flujo $x(u,v)$ & Paquetes por hora que efectivamente se envían por la ruta $(u,v)$. \\
+    Valor $\lvert x\rvert$ & Paquetes por hora que salen de $s$ y llegan a $t$. \\
+    \bottomrule
+  \end{tabular}
+  \caption{Correspondencia entre los elementos del grafo y el problema logístico.}
+  \label{tab:modelo}
+\end{table}
+
+Los centros intermedios no almacenan ni generan paquetes: todo lo que entra a un centro sale de él (conservación del flujo, sección~2).
+
+\subsection{Conjunto de vértices}
+
+\[
+  V = \{\text{STG}, \text{RAN}, \text{TAL}, \text{CHI}, \text{CON}, \text{LAN}, \text{TEM}, \text{VIL}, \text{VAL}, \text{OSO}, \text{PMO}\}, \qquad \lvert V\rvert = 11
+\]
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{lll}
+    \toprule
+    \textbf{Id} & \textbf{Centro logístico} & \textbf{Rol} \\
+    \midrule
+    STG & Santiago     & Origen $s$ \\
+    RAN & Rancagua     & Intermedio \\
+    TAL & Talca        & Intermedio \\
+    CHI & Chillán      & Intermedio \\
+    CON & Concepción   & Intermedio \\
+    LAN & Los Ángeles  & Intermedio \\
+    TEM & Temuco       & Intermedio \\
+    VIL & Villarrica   & Intermedio \\
+    VAL & Valdivia     & Intermedio \\
+    OSO & Osorno       & Intermedio \\
+    PMO & Puerto Montt & Destino $t$ \\
+    \bottomrule
+  \end{tabular}
+  \caption{Vértices de la red inicial.}
+  \label{tab:vertices}
+\end{table}
+
+\subsection{Conjunto de arcos y función de capacidad}
+
+$E$ tiene $\lvert E\rvert = 19$ arcos. La función $c: E \to \{1, 2, \dots, 12\}$ asigna a cada uno su capacidad en paquetes por hora:
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{clc@{\hspace{1.2cm}}clc}
+    \toprule
+    \textbf{\#} & \textbf{Arco $(u,v)$} & \textbf{$c(u,v)$} & \textbf{\#} & \textbf{Arco $(u,v)$} & \textbf{$c(u,v)$} \\
+    \midrule
+    1  & (STG, RAN) & 10 & 11 & (LAN, TEM) & 3  \\
+    2  & (STG, TAL) & 12 & 12 & (LAN, VAL) & 6  \\
+    3  & (STG, CON) & 6  & 13 & (TEM, VIL) & 5  \\
+    4  & (RAN, CHI) & 7  & 14 & (TEM, VAL) & 6  \\
+    5  & (TAL, CHI) & 5  & 15 & (TEM, OSO) & 4  \\
+    6  & (TAL, CON) & 6  & 16 & (VIL, OSO) & 5  \\
+    7  & (CHI, LAN) & 8  & 17 & (VAL, OSO) & 3  \\
+    8  & (CHI, TEM) & 4  & 18 & (VAL, PMO) & 12 \\
+    9  & (CON, LAN) & 5  & 19 & (OSO, PMO) & 11 \\
+    10 & (CON, TEM) & 7  &    &            &    \\
+    \bottomrule
+  \end{tabular}
+  \caption{Arcos y capacidades de la red inicial (capacidad mínima 3, máxima 12).}
+  \label{tab:arcos}
+\end{table}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.92\textwidth]{figuras/fig1_1_red_inicial.png}
+  \caption{Red inicial de distribución con las capacidades sobre cada arco.}
+  \label{fig:red_inicial}
+\end{figure}
+
+\subsection{Grados de los vértices}
+
+$\deg^+(v)$ es el número de arcos que salen de $v$ y $\deg^-(v)$ el número de arcos que entran:
+
+\begin{table}[H]
+  \centering
+  \small
+  \begin{tabular}{lcccccccccccc}
+    \toprule
+    $v$ & STG & RAN & TAL & CHI & CON & LAN & TEM & VIL & VAL & OSO & PMO & \textbf{Suma} \\
+    \midrule
+    $\deg^+(v)$ & 3 & 1 & 2 & 2 & 2 & 2 & 3 & 1 & 2 & 1 & 0 & 19 \\
+    $\deg^-(v)$ & 0 & 1 & 1 & 2 & 2 & 2 & 3 & 1 & 2 & 3 & 2 & 19 \\
+    \textbf{Total} & 3 & 2 & 3 & 4 & 4 & 4 & 6 & 2 & 4 & 4 & 2 & 38 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Grados de salida y entrada de los vértices.}
+  \label{tab:grados}
+\end{table}
+
+Comprobación: $\sum_{v \in V} \deg^+(v) = \sum_{v \in V} \deg^-(v) = \lvert E\rvert = 19$, porque cada arco aporta una salida y una entrada. El origen no tiene arcos de entrada ($\deg^-(\text{STG}) = 0$) y el destino no tiene arcos de salida ($\deg^+(\text{PMO}) = 0$). Temuco es el centro de mayor grado (6): recibe tres rutas y despacha tres.
+
+\subsection{Auditoría de las restricciones del enunciado}
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{p{4.6cm}p{7.4cm}c}
+    \toprule
+    \textbf{Restricción} & \textbf{Verificación} & \textbf{Cumple} \\
+    \midrule
+    $10 \le \lvert V\rvert \le 12$ & $\lvert V\rvert = 11$ & Sí \\
+    $15 \le \lvert E\rvert \le 20$ & $\lvert E\rvert = 19$ & Sí \\
+    $c: E \to \{1,\dots,12\}$ & Las 19 capacidades son enteras y están entre 3 y 12 & Sí \\
+    Sin lazos & Ningún arco tiene la forma $(u,u)$ & Sí \\
+    Sin arcos repetidos & Los 19 pares ordenados $(u,v)$ son distintos & Sí \\
+    Sin arcos recíprocos & Para ningún $(u,v) \in E$ existe $(v,u) \in E$ (red acíclica) & Sí \\
+    Ningún vértice aislado & $\deg^+(v) + \deg^-(v) \ge 2$ para todo $v \in V$ (Tabla~\ref{tab:grados}) & Sí \\
+    $s \ne t$ & $s = \text{STG}$, $t = \text{PMO}$ & Sí \\
+    Al menos dos caminos de $s$ a $t$ & $P_1$ y $P_2$ detallados abajo & Sí \\
+    \bottomrule
+  \end{tabular}
+  \caption{Auditoría de las restricciones del enunciado sobre la red inicial.}
+  \label{tab:auditoria}
+\end{table}
+
+Dos caminos dirigidos de $s$ a $t$:
+\begin{itemize}
+  \item $P_1$: $\text{STG} \to \text{CON} \to \text{LAN} \to \text{VAL} \to \text{PMO}$
+  \item $P_2$: $\text{STG} \to \text{RAN} \to \text{CHI} \to \text{TEM} \to \text{OSO} \to \text{PMO}$
+\end{itemize}
+
+$P_1$ y $P_2$ no comparten ningún arco ni ningún vértice intermedio, de modo que son distintos bajo cualquier lectura de ``caminos distintos''. La aplicación comprueba estas mismas restricciones con código (\texttt{validar\_red} en \texttt{core/validacion.py}): para \texttt{data/initial\_network.json} no reporta ningún error.
+
+\subsection{Interpretación}
+
+\begin{itemize}
+  \item \textbf{Sentido único.} Todas las rutas avanzan de norte a sur. Un paquete nunca retrocede, y por eso la red no tiene ciclos ni arcos recíprocos.
+  \item \textbf{Rutas alternativas.} Entre Santiago y Puerto Montt hay muchos caminos. Si una ruta se interrumpe, los paquetes pueden desviarse por otros centros; cuánto se pierde depende de las capacidades de las rutas que quedan (sección~4).
+  \item \textbf{Cotas inmediatas.} De Santiago pueden salir a lo más $10 + 12 + 6 = 28$ paquetes por hora, y a Puerto Montt pueden entrar a lo más $12 + 11 = 23$. Por lo tanto ningún flujo puede superar 23. El valor exacto depende de las capacidades intermedias, y se calcula mediante el algoritmo de la sección~2.
+\end{itemize}
+
+% ==============================================================================
+% SECCIÓN 2: INVESTIGACIÓN Y SELECCIÓN DEL ALGORITMO (Rodrigo Pedraza - R9)
+% ==============================================================================
+\section{Investigación y selección del algoritmo}
+
+\poragregar{Rodrigo Pedraza (Tarea R9)}{%
+  Completar a partir de \texttt{docs/fase2-algoritmo.md}:
+  \begin{itemize}
+    \item Definición de flujo factible, red residual $G_x$, $c_x(u,v)$ y camino aumentante.
+    \item Descripción de al menos dos algoritmos alternativos (ej. Ford--Fulkerson, Edmonds--Karp, Dinic).
+    \item Tabla comparativa de complejidad temporal, ventajas y desventajas.
+    \item Justificación de la elección de Edmonds--Karp y citas bibliográficas confirmadas.
+  \end{itemize}
+}
+
+% ==============================================================================
+% SECCIÓN 3: CORTE MÍNIMO E IMPLEMENTACIÓN (Rodrigo Pedraza - R10)
+% ==============================================================================
+\section{Teorema de flujo máximo--corte mínimo e implementación}
+
+\poragregar{Rodrigo Pedraza (Tarea R10)}{%
+  Explicar el teorema de flujo máximo--corte mínimo ($\lvert x^*\rvert = c(S,T)$), el procedimiento de alcanzabilidad en $G_{x^*}$ desde $s$ para obtener $(S,T)$, y documentar las funciones implementadas en \texttt{core/} (\texttt{flujo\_maximo.py}, \texttt{corte\_minimo.py}, \texttt{resolvedor.py}, \texttt{ediciones.py}, \texttt{validacion.py}).
+}
+
+% ==============================================================================
+% SECCIÓN 4: RESULTADOS Y ANÁLISIS (Sebastián Pereda - S13)
+% ==============================================================================
+\section{Resultados y análisis de configuraciones}
+
+\subsection{Configuración 1: Red inicial}
+\poragregar{Sebastián Pereda (Tarea S13)}{%
+  Incluir flujo máximo $\lvert x^*\rvert = 20$, partición $(S, T)$, capacidad del corte $c(S,T) = 20$, rutas saturadas e interpretación logística.
+}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\textwidth]{figuras/fig4_1_red_inicial.png}
+  \caption{Resultado del flujo máximo y corte mínimo para la red inicial.}
+  \label{fig:res_red_inicial}
+\end{figure}
+
+\subsection{Configuración 2: Modificación 1}
+\poragregar{Sebastián Pereda (Tarea S13)}{%
+  Describir el cambio aplicado (\texttt{data/mod1.json}), nuevo flujo máximo ($13$), nuevo corte mínimo e impacto respecto a la red inicial.
+}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\textwidth]{figuras/fig4_2_mod1.png}
+  \caption{Resultado del flujo máximo y corte mínimo para la Modificación 1.}
+  \label{fig:res_mod1}
+\end{figure}
+
+\subsection{Configuración 3: Modificación 2}
+\poragregar{Sebastián Pereda (Tarea S13)}{%
+  Describir el cambio aplicado (\texttt{data/mod2.json}), nuevo flujo máximo ($23$), nuevo corte mínimo e interpretación comparativa.
+}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\textwidth]{figuras/fig4_3_mod2.png}
+  \caption{Resultado del flujo máximo y corte mínimo para la Modificación 2.}
+  \label{fig:res_mod2}
+\end{figure}
+
+\subsection{Comparación global}
+\poragregar{Sebastián Pereda (Tarea S13)}{%
+  Tabla comparativa de las tres configuraciones ($\lvert x^*\rvert$, $S$, $T$, $c(S,T)$ y arcos del corte).
+}
+
+% ==============================================================================
+% SECCIÓN 5: VERIFICACIÓN (Sebastián Pereda - S13)
+% ==============================================================================
+\section{Verificación y caso manual}
+
+\poragregar{Sebastián Pereda (Tarea S13)}{%
+  Incluir resolución manual paso a paso de \texttt{data/manual\_case.json} (con $x(u,v)/c(u,v)$, $G_x$, $c_x$, $\delta$, $S$, $T$), tablas de capacidad y conservación de \texttt{core/verificacion.py}, comprobación $\lvert x\rvert = c(S,T)$ y contraste con la salida del programa y las pruebas unitarias.
+}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\textwidth]{figuras/fig5_1_caso_manual.png}
+  \caption{Resultado del flujo máximo y corte mínimo para el caso de verificación manual.}
+  \label{fig:res_caso_manual}
+\end{figure}
+
+% ==============================================================================
+% SECCIÓN 6: REFERENCIAS (Rodrigo Pedraza - R11)
+% ==============================================================================
+\section{Referencias}
+
+\poragregar{Rodrigo Pedraza (Tarea R11)}{%
+  Agregar referencias académicas y técnicas verificadas (ej. Cormen et al. CLRS, Kleinberg \& Tardos, documentación de Python/Streamlit/Graphviz) usando \texttt{\textbackslash begin\{thebibliography\}} o BibLaTeX.
+}
+
+\end{document}
