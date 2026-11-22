@@ -20,7 +20,7 @@ En desarrollo. El diseño (fases 0 a 2), las redes de datos y las tareas están 
 Crear un entorno virtual e instalar Streamlit (recomendado, evita conflictos con Python del sistema):
 
 ```bash
-python -m venv .venv
+python -m venv .venv   # o python3 en Linux/macOS
 ```
 
 Activar el entorno según la terminal:
@@ -36,7 +36,7 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-*(Alternativa sin activar el entorno en cualquier shell Linux/macOS: `.venv/bin/streamlit run app.py`.)*
+*(Alternativa sin activar el entorno en cualquier shell Linux/macOS: `.venv/bin/pip install -r requirements.txt` y `.venv/bin/streamlit run app.py`.)*
 
 Pruebas (no requieren Streamlit, solo biblioteca estándar):
 
