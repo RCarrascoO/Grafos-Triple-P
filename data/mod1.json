@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "name": "Modificación 1: cierre de Concepción - Temuco",
+  "profile": "modified",
+  "units": "paquetes/hora",
+  "source": "STG",
+  "sink": "PMO",
+  "nodes": [
+    { "id": "STG", "label": "Santiago",     "x": 60,  "y": 300 },
+    { "id": "RAN", "label": "Rancagua",     "x": 220, "y": 110 },
+    { "id": "TAL", "label": "Talca",        "x": 220, "y": 300 },
+    { "id": "CHI", "label": "Chillán",      "x": 400, "y": 110 },
+    { "id": "CON", "label": "Concepción",   "x": 400, "y": 490 },
+    { "id": "LAN", "label": "Los Ángeles",  "x": 520, "y": 300 },
+    { "id": "TEM", "label": "Temuco",       "x": 690, "y": 300 },
+    { "id": "VIL", "label": "Villarrica",   "x": 820, "y": 110 },
+    { "id": "VAL", "label": "Valdivia",     "x": 820, "y": 470 },
+    { "id": "OSO", "label": "Osorno",       "x": 900, "y": 300 },
+    { "id": "PMO", "label": "Puerto Montt", "x": 960, "y": 530 }
+  ],
+  "arcs": [
+    { "id": "STG-RAN", "from": "STG", "to": "RAN", "capacity": 10, "active": true },
+    { "id": "STG-TAL", "from": "STG", "to": "TAL", "capacity": 12, "active": true },
+    { "id": "STG-CON", "from": "STG", "to": "CON", "capacity": 6,  "active": true },
+    { "id": "RAN-CHI", "from": "RAN", "to": "CHI", "capacity": 7,  "active": true },
+    { "id": "TAL-CHI", "from": "TAL", "to": "CHI", "capacity": 5,  "active": true },
+    { "id": "TAL-CON", "from": "TAL", "to": "CON", "capacity": 6,  "active": true },
+    { "id": "CHI-LAN", "from": "CHI", "to": "LAN", "capacity": 8,  "active": true },
+    { "id": "CHI-TEM", "from": "CHI", "to": "TEM", "capacity": 4,  "active": true },
+    { "id": "CON-LAN", "from": "CON", "to": "LAN", "capacity": 5,  "active": true },
+    { "id": "CON-TEM", "from": "CON", "to": "TEM", "capacity": 7,  "active": false },
+    { "id": "LAN-TEM", "from": "LAN", "to": "TEM", "capacity": 3,  "active": true },
+    { "id": "LAN-VAL", "from": "LAN", "to": "VAL", "capacity": 6,  "active": true },
+    { "id": "TEM-VIL", "from": "TEM", "to": "VIL", "capacity": 5,  "active": true },
+    { "id": "TEM-VAL", "from": "TEM", "to": "VAL", "capacity": 6,  "active": true },
+    { "id": "TEM-OSO", "from": "TEM", "to": "OSO", "capacity": 4,  "active": true },
+    { "id": "VIL-OSO", "from": "VIL", "to": "OSO", "capacity": 5,  "active": true },
+    { "id": "VAL-OSO", "from": "VAL", "to": "OSO", "capacity": 3,  "active": true },
+    { "id": "VAL-PMO", "from": "VAL", "to": "PMO", "capacity": 12, "active": true },
+    { "id": "OSO-PMO", "from": "OSO", "to": "PMO", "capacity": 11, "active": true }
+  ]
+}
