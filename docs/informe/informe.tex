@@ -304,9 +304,12 @@ $P_1$ y $P_2$ no comparten ningún arco ni ningún vértice intermedio, de modo 
 \section{Resultados y análisis de configuraciones}
 
 \subsection{Configuración 1: Red inicial}
-\poragregar{Sebastián Pereda (Tarea S13)}{%
-  Incluir flujo máximo $\lvert x^*\rvert = 20$, partición $(S, T)$, capacidad del corte $c(S,T) = 20$, rutas saturadas e interpretación logística.
-}
+Se ejecutó \texttt{resolver} sobre \texttt{data/initial\_network.json}, con origen STG y destino PMO. El flujo máximo es de $20$ paquetes/hora, obtenido en nueve aumentos. La partición calculada es
+\begin{align*}
+S_0 &= \{\text{STG},\text{RAN},\text{TAL},\text{CHI},\text{CON},\text{LAN}\},\\
+T_0 &= \{\text{TEM},\text{VIL},\text{VAL},\text{OSO},\text{PMO}\}.
+\end{align*}
+Los arcos del corte son CHI--TEM, CON--TEM, LAN--TEM y LAN--VAL. Sus capacidades suman $4+7+3+6=20$ y todos están saturados. Por tanto, $\lvert x^*\rvert=c(S_0,T_0)=20$. El límite está en las rutas que conectan la zona del Biobío con Temuco y Valdivia, aunque Santiago puede despachar hasta $28$ y Puerto Montt recibir hasta $23$ paquetes/hora.
 
 \begin{figure}[H]
   \centering
@@ -316,9 +319,12 @@ $P_1$ y $P_2$ no comparten ningún arco ni ningún vértice intermedio, de modo 
 \end{figure}
 
 \subsection{Configuración 2: Modificación 1}
-\poragregar{Sebastián Pereda (Tarea S13)}{%
-  Describir el cambio aplicado (\texttt{data/mod1.json}), nuevo flujo máximo ($13$), nuevo corte mínimo e impacto respecto a la red inicial.
-}
+En \texttt{data/mod1.json} se desactiva CON--TEM, conservando su capacidad registrada en $7$. La ruta deja de participar en el cálculo y aparece discontinua en la interfaz. El flujo máximo baja a $13$ paquetes/hora, en cinco aumentos. Se mantienen $S=S_0$ y $T=T_0$, pero el corte pierde CON--TEM:
+\[
+c(S,T)=c(\text{CHI},\text{TEM})+c(\text{LAN},\text{TEM})+
+c(\text{LAN},\text{VAL})=4+3+6=13.
+\]
+Las tres rutas restantes del corte están saturadas. El cierre reduce el transporte en $7$ paquetes/hora, un $35\%$ respecto a la red inicial. Las rutas alternativas no compensan la pérdida porque atraviesan el mismo cuello de botella.
 
 \begin{figure}[H]
   \centering
@@ -328,9 +334,11 @@ $P_1$ y $P_2$ no comparten ningún arco ni ningún vértice intermedio, de modo 
 \end{figure}
 
 \subsection{Configuración 3: Modificación 2}
-\poragregar{Sebastián Pereda (Tarea S13)}{%
-  Describir el cambio aplicado (\texttt{data/mod2.json}), nuevo flujo máximo ($23$), nuevo corte mínimo e interpretación comparativa.
-}
+En \texttt{data/mod2.json}, partiendo nuevamente de la red inicial, se amplía CON--TEM de $7$ a $9$ y se agrega CON--VAL con capacidad $8$. El flujo máximo alcanza $23$ paquetes/hora en nueve aumentos: una mejora de $3$ paquetes/hora ($15\%$). Ahora $S=V\setminus\{\text{PMO}\}$ y $T=\{\text{PMO}\}$. El corte se desplaza a las entradas al destino:
+\[
+c(S,T)=c(\text{VAL},\text{PMO})+c(\text{OSO},\text{PMO})=12+11=23.
+\]
+Ambas entradas están saturadas. Aumentar otras rutas sin ampliar este acceso final no permite superar $23$. La nueva conexión CON--VAL ya alcanza ese valor por sí sola (prueba S8); la ampliación adicional de CON--TEM no aumenta el máximo de esta configuración. En el flujo obtenido, CON--TEM transporta $4$ de sus $9$ unidades disponibles.
 
 \begin{figure}[H]
   \centering
@@ -340,18 +348,118 @@ $P_1$ y $P_2$ no comparten ningún arco ni ningún vértice intermedio, de modo 
 \end{figure}
 
 \subsection{Comparación global}
-\poragregar{Sebastián Pereda (Tarea S13)}{%
-  Tabla comparativa de las tres configuraciones ($\lvert x^*\rvert$, $S$, $T$, $c(S,T)$ y arcos del corte).
-}
+Las tres configuraciones utilizan los mismos once centros y los terminales STG y PMO. Las modificaciones cubren desactivar, cambiar capacidad y agregar una ruta, sin lazos, arcos repetidos ni recíprocos. \texttt{validar\_red} devuelve una lista vacía para cada archivo.
+\begin{table}[H]
+  \centering
+  \small
+  \begin{tabular}{lcc>{\raggedright\arraybackslash}p{4.1cm}>{\raggedright\arraybackslash}p{4.0cm}}
+    \toprule
+    Red & $\lvert x^*\rvert$ & $c(S,T)$ & Partición & Arcos del corte \\
+    \midrule
+    Inicial & 20 & 20 & $S_0$, $T_0$ & CHI--TEM, CON--TEM, LAN--TEM, LAN--VAL \\
+    Modificación 1 & 13 & 13 & $S_0$, $T_0$ & CHI--TEM, LAN--TEM, LAN--VAL \\
+    Modificación 2 & 23 & 23 & $V\setminus\{\text{PMO}\}$, $\{\text{PMO}\}$ & VAL--PMO, OSO--PMO \\
+    \bottomrule
+  \end{tabular}
+  \caption{Comparación de configuraciones; valores en paquetes/hora. Los conjuntos $S_0$ y $T_0$ se definieron en la configuración inicial.}
+  \label{tab:comparacion}
+\end{table}
+Las figuras~\ref{fig:res_red_inicial}--\ref{fig:res_mod2} muestran los resultados de la aplicación. Las tablas de la sección siguiente permiten comprobar capacidad y conservación para cada escenario.
 
 % ==============================================================================
 % SECCIÓN 5: VERIFICACIÓN (Sebastián Pereda - S13)
 % ==============================================================================
 \section{Verificación y caso manual}
 
-\poragregar{Sebastián Pereda (Tarea S13)}{%
-  Incluir resolución manual paso a paso de \texttt{data/manual\_case.json} (con $x(u,v)/c(u,v)$, $G_x$, $c_x$, $\delta$, $S$, $T$), tablas de capacidad y conservación de \texttt{core/verificacion.py}, comprobación $\lvert x\rvert = c(S,T)$ y contraste con la salida del programa y las pruebas unitarias.
-}
+\subsection{Resolución manual y redes residuales}
+Se resolvió \texttt{data/manual\_case.json}, con seis vértices, ocho arcos, origen $s$ y destino $t$. Se parte de flujo cero y se aplica Edmonds--Karp con BFS y vecinos en orden alfabético. En cada aumento se resta $\delta$ al residual directo y se suma al inverso. Los números de los dibujos siguientes representan capacidades residuales, no las etiquetas $x/c$ de la interfaz.
+
+\begin{table}[H]
+  \centering
+  \small
+  \begin{tabular}{cllcc}
+    \toprule
+    Aumento & Camino & Residuales antes de aumentar & $\delta$ & $\lvert x\rvert$ \\
+    \midrule
+    1 & $s\to b\to a\to t$ & $5,6,3$ & 3 & 3 \\
+    2 & $s\to b\to d\to t$ & $2,6,9$ & 2 & 5 \\
+    3 & $s\to c\to a\to b\to d\to t$ & $7,5,3,4,7$ & 3 & 8 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Registro manual, coincidente con \texttt{iterations} del programa.}
+  \label{tab:manual_iteraciones}
+\end{table}
+El tercer camino recorre $a\to b$, inverso residual del arco original $(b,a)$: cancela sus tres unidades de flujo. Así, $a$ pasa a recibirlas desde $c$ y $b$ redirige las suyas hacia $d$. No se agrega una ruta física recíproca.
+
+\clearpage
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.93\textwidth,height=0.85\textheight,keepaspectratio]{figuras/manual_01_inicio.png}
+  \caption{Cálculo manuscrito de Sebastián: estado inicial y residual tras el primer aumento ($\delta=3$, $\lvert x\rvert=3$).}
+  \label{fig:manual_inicio}
+\end{figure}
+
+\clearpage
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.93\textwidth,height=0.85\textheight,keepaspectratio]{figuras/manual_02_aumentos.png}
+  \caption{Residuales tras los aumentos segundo y tercero. El flujo acumulado pasa de $5$ a $8$ mediante la cancelación por $a\to b$.}
+  \label{fig:manual_aumentos}
+\end{figure}
+
+\clearpage
+\subsection{Parada y certificación de optimalidad}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.98\textwidth]{figuras/manual_03_corte.png}
+  \caption{Residual final y separación de $S=\{s,a,c\}$ y $T=\{b,d,t\}$. El estado $G_4$ del manuscrito es la búsqueda de parada; hubo tres aumentos.}
+  \label{fig:manual_corte}
+\end{figure}
+
+\textbf{Justificación:} Al intentar nuevamente un camino aumentante desde el origen $s$, solo se logra avanzar hasta el nodo $a$ (pasando por $c$), donde nos encontramos bloqueados para seguir hacia el destino $t$: el arco directo $(a,t)$ ya tiene su máxima capacidad utilizada ($c_x(a,t)=0$) y el arco inverso $(a,b)$ también quedó en $0$ al cancelarse el flujo previo de $(b,a)$ en la iteración 3. Por lo tanto, el conjunto alcanzable $S=\{s,a,c\}$ queda aislado del resto de la red ($T=\{b,d,t\}$) y ahí se cierra el flujo.
+
+Aquí \emph{aislado} significa que no hay arcos de capacidad residual positiva que permitan salir de $S$ hacia $T$; sí existen conexiones en la red original y arcos residuales en sentido contrario.
+
+\textbf{Certificación de optimalidad:} Los únicos arcos originales que cruzan de $S$ hacia $T$ son $(s,b)$ y $(a,t)$, ambos saturados, con capacidad total $c(S,T)=5+3=8$ paquetes/hora. Como todo flujo factible cumple $\lvert x\rvert\le c(S,T)$ y aquí se obtiene $\lvert x\rvert=c(S,T)=8$, se certifica que el flujo es \textbf{máximo} y el corte $(S,T)$ es \textbf{mínimo}.
+
+\subsection{Flujo final y contraste con el programa}
+El flujo final se recupera de cada arco original como $x(u,v)=c(u,v)-c_x(u,v)$. La tabla~\ref{tab:manual_capacidad} muestra que todos los valores son enteros y satisfacen $0\le x(u,v)\le c(u,v)$.
+\begin{table}[H]
+  \centering
+  \begin{tabular}{lrrrr}
+    \toprule
+    Arco & $c$ & $x$ manual & $x$ programa & $c_x$ directo final \\
+    \midrule
+    $(s,b)$ & 5 & 5 & 5 & 0 \\
+    $(s,c)$ & 7 & 3 & 3 & 4 \\
+    $(b,a)$ & 6 & 0 & 0 & 6 \\
+    $(b,d)$ & 6 & 5 & 5 & 1 \\
+    $(c,a)$ & 5 & 3 & 3 & 2 \\
+    $(d,c)$ & 5 & 0 & 0 & 5 \\
+    $(a,t)$ & 3 & 3 & 3 & 0 \\
+    $(d,t)$ & 9 & 5 & 5 & 4 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Capacidad y flujo final por arco del caso manual, contrastados con \texttt{flows}.}
+  \label{tab:manual_capacidad}
+\end{table}
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{lrrr}
+    \toprule
+    Nodo & Entrada & Salida & Entrada menos salida \\
+    \midrule
+    $a$ & 3 & 3 & 0 \\
+    $b$ & 5 & 5 & 0 \\
+    $c$ & 3 & 3 & 0 \\
+    $d$ & 5 & 5 & 0 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Conservación en los nodos intermedios del caso manual, coincidente con \texttt{conservation\_table}.}
+  \label{tab:manual_conservacion}
+\end{table}
+El origen entrega $5+3=8$ y el destino recibe $3+5=8$ paquetes/hora. La salida de \texttt{resolver} coincide con el cálculo manual en los tres caminos, los cuellos de botella $(3,2,3)$, los flujos por arco y la partición del corte. La búsqueda final sin camino no agrega una fila a \texttt{iterations}. No se observaron diferencias entre ambas resoluciones.
 
 \begin{figure}[H]
   \centering
@@ -359,6 +467,84 @@ $P_1$ y $P_2$ no comparten ningún arco ni ningún vértice intermedio, de modo 
   \caption{Resultado del flujo máximo y corte mínimo para el caso de verificación manual.}
   \label{fig:res_caso_manual}
 \end{figure}
+
+\subsection{Comprobaciones de las tres configuraciones}
+Las siguientes tablas se obtuvieron de \texttt{flows}, las capacidades de los JSON y \texttt{checks} al ejecutar \texttt{resolver} para cada configuración. \texttt{core/verificacion.py} recalcula las comprobaciones desde la red y los flujos, sin consultar el motor ni su residual.
+
+\begin{table}[H]
+  \centering
+  \small
+  \begin{tabular}{lccc}
+    \toprule
+    Arco & Inicial: $x/c$ & Modificación 1: $x/c$ & Modificación 2: $x/c$ \\
+    \midrule
+    STG--RAN & 7/10 & 7/10 & 7/10 \\
+    STG--TAL & 7/12 & 1/12 & 10/12 \\
+    STG--CON & 6/6 & 5/6 & 6/6 \\
+    RAN--CHI & 7/7 & 7/7 & 7/7 \\
+    TAL--CHI & 1/5 & 1/5 & 4/5 \\
+    TAL--CON & 6/6 & 0/6 & 6/6 \\
+    CHI--LAN & 4/8 & 4/8 & 7/8 \\
+    CHI--TEM & 4/4 & 4/4 & 4/4 \\
+    CON--LAN & 5/5 & 5/5 & 0/5 \\
+    CON--TEM & 7/7 & Inactivo & 4/9 \\
+    LAN--TEM & 3/3 & 3/3 & 1/3 \\
+    LAN--VAL & 6/6 & 6/6 & 6/6 \\
+    TEM--VIL & 4/5 & 0/5 & 4/5 \\
+    TEM--VAL & 6/6 & 3/6 & 1/6 \\
+    TEM--OSO & 4/4 & 4/4 & 4/4 \\
+    VIL--OSO & 4/5 & 0/5 & 4/5 \\
+    VAL--OSO & 0/3 & 0/3 & 3/3 \\
+    VAL--PMO & 12/12 & 9/12 & 12/12 \\
+    OSO--PMO & 8/11 & 4/11 & 11/11 \\
+    CON--VAL & No existe & No existe & 8/8 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Verificación de capacidad por arco: en toda ruta activa, $x$ es entero y $0\le x\le c$. Un arco inactivo no aparece en \texttt{flows}.}
+  \label{tab:capacidades_configuraciones}
+\end{table}
+
+\begin{table}[H]
+  \centering
+  \small
+  \begin{tabular}{lccc}
+    \toprule
+    Nodo & Inicial: entra/sale & Modificación 1: entra/sale & Modificación 2: entra/sale \\
+    \midrule
+    CHI & 8/8 & 8/8 & 11/11 \\
+    CON & 12/12 & 5/5 & 12/12 \\
+    LAN & 9/9 & 9/9 & 7/7 \\
+    OSO & 8/8 & 4/4 & 11/11 \\
+    RAN & 7/7 & 7/7 & 7/7 \\
+    TAL & 7/7 & 1/1 & 10/10 \\
+    TEM & 14/14 & 7/7 & 9/9 \\
+    VAL & 12/12 & 9/9 & 15/15 \\
+    VIL & 4/4 & 0/0 & 4/4 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Conservación por nodo intermedio. Entrada y salida coinciden en todas las filas; STG y PMO se excluyen por ser los terminales.}
+  \label{tab:conservacion_configuraciones}
+\end{table}
+
+\begin{table}[H]
+  \centering
+  \small
+  \begin{tabular}{lcccc}
+    \toprule
+    Caso & Capacidad & Conservación & $\lvert x\rvert=c(S,T)$ & Dualidad \\
+    \midrule
+    Inicial & Cumple & Cumple & $20=20$ & Cumple \\
+    Modificación 1 & Cumple & Cumple & $13=13$ & Cumple \\
+    Modificación 2 & Cumple & Cumple & $23=23$ & Cumple \\
+    Manual & Cumple & Cumple & $8=8$ & Cumple \\
+    \bottomrule
+  \end{tabular}
+  \caption{Resumen de \texttt{checks}. Dualidad exige además $s\in S$ y $t\notin S$.}
+  \label{tab:checks}
+\end{table}
+
+\subsection{Pruebas automáticas}
+Las pruebas S7--S11 comprueban resultados conocidos, modificaciones, casos borde y errores de validación. Como contraste independiente, \texttt{brute\_force\_min\_cut} enumera todos los cortes de las tres redes de referencia y de veinte redes aleatorias válidas de seis nodos (semilla 1), y compara el mínimo con el flujo calculado. La suite se ejecuta desde la raíz con \texttt{python -m unittest}. Estas pruebas complementan el cálculo manual; la revisión interactiva de la interfaz corresponde a S14.
 
 % ==============================================================================
 % SECCIÓN 6: REFERENCIAS (Rodrigo Pedraza - R11)
