@@ -107,7 +107,7 @@ Las secciones de este informe utilizan los siguientes símbolos y definiciones e
     $s$, $t$ & Origen y destino, con $s \ne t$. \\
     $\deg^+(v)$, $\deg^-(v)$ & Grado de salida y grado de entrada de $v$. \\
     $x$ & Flujo: asigna a cada arco un valor $x(u,v)$. \\
-    $x(u,v)/c(u,v)$ & Etiqueta ``flujo/capacidad'' de un arco en tablas y figuras. \\
+    $x(u,v)/c(u,v)$ & Etiqueta ``flujo/capacidad'' de un arco en cuadros y figuras. \\
     $\lvert x\rvert$ & Valor del flujo: cantidad neta que sale del origen $s$. \\
     $x^*$ & Un flujo máximo; $\lvert x^*\rvert$ es su valor. \\
     $S$, $T$ & Partición de $V$ que define un corte ($V = S \cup T$, $S \cap T = \emptyset$, $s \in S$, $t \in T$). \\
@@ -302,7 +302,7 @@ Los métodos de caminos aumentantes comparten la noción de red residual $G_x$ a
   \item \textbf{Directa:} $c_x(u,v) = c(u,v) - x(u,v)$, lo que todavía cabe por $(u,v)$.
   \item \textbf{Inversa:} $c_x(v,u) = x(u,v)$, el flujo ya enviado por $(u,v)$ que puede cancelarse o redirigirse.
 \end{itemize}
-Un \emph{camino aumentante} es un camino simple de $s$ a $t$ en $G_x$ formado solo por arcos con $c_x > 0$. Su \emph{cuello de botella} $\delta$ es la menor capacidad residual del camino. Enviar $\delta$ unidades por él (restando $\delta$ a los residuales directos recorridos y sumándolo a sus inversos) produce un flujo factible de valor $\lvert x\rvert + \delta$.
+Un \emph{camino aumentante} es un camino simple de $s$ a $t$ en $G_x$ formado solo por arcos con $c_x > 0$. Su \emph{cuello de botella} $\delta$ es la menor capacidad residual del camino. Enviar $\delta$ unidades por él (restando $\delta$ a la capacidad residual de cada arco $(u,v)$ recorrido y sumándolo a la de su sentido opuesto $(v,u)$) produce un flujo factible de valor $\lvert x\rvert + \delta$.
 
 \textbf{Los arcos inversos son indispensables.} Sin ellos el procedimiento es una heurística voraz que puede quedar bloqueada. En el caso manual de la sección~5, si primero se envían 3 unidades por $s\to b\to a\to t$ y luego 2 por $s\to b\to d\to t$, el flujo queda en $5$ y no hay otro camino directo con capacidad; el óptimo es $8$ y solo se alcanza cancelando flujo de $(b,a)$ mediante su arco inverso.
 
@@ -344,7 +344,7 @@ Es la variante de Ford--Fulkerson que fija la regla de elección: en cada iterac
     Terminación, capacidades enteras & Sí & Sí \\
     Terminación, capacidades reales & No siempre & Sí \\
     Reproducibilidad para el cálculo manual & Baja: sensible al orden de la DFS & Alta: caminos más cortos y orden fijo \\
-    Obtención del corte mínimo & Igual en ambos: la alcanzabilidad desde $s$ en $G_x$ final entrega $S$ & Igual en ambos \\
+    Obtención del corte mínimo & \multicolumn{2}{p{9.2cm}}{Igual en ambos: la alcanzabilidad desde $s$ en $G_x$ final entrega $S$} \\
     \bottomrule
   \end{tabular}
   \caption{Comparación de las dos estrategias estudiadas.}
@@ -432,8 +432,8 @@ def edmonds_karp(red, s, t):
     \midrule
     flujo\_maximo.py & construir\_residual(red) & Residual inicial para $x=0$: \texttt{res[u][v]=c}, \texttt{res[v][u]=0} por arco activo. \\
     flujo\_maximo.py & buscar\_camino(residual, s, t) & BFS con cola FIFO, vecinos en orden lexicográfico, solo arcos con residual $>0$; devuelve el camino más corto o \texttt{None}. \\
-    flujo\_maximo.py & cuello\_botella(residual, camino) & Mínimo residual entre pares consecutivos: $\delta$. \\
-    flujo\_maximo.py & aumentar(residual, camino, delta) & Resta $\delta$ al directo y lo suma al inverso en cada par del camino. \\
+    flujo\_maximo.py & cuello\_botella(\allowbreak residual, camino) & Mínimo residual entre pares consecutivos: $\delta$. \\
+    flujo\_maximo.py & aumentar(residual, camino, delta) & Resta $\delta$ a $c_x(u,v)$ y lo suma a $c_x(v,u)$ para cada arco $(u,v)$ recorrido. \\
     flujo\_maximo.py & edmonds\_karp(red, s, t) & Bucle anterior hasta agotar caminos; devuelve valor, flujo por arco activo, iteraciones y residual final. \\
     corte\_minimo.py & alcanzables\_\allowbreak desde(\allowbreak residual, s) & BFS desde $s$ por arcos con residual $>0$: el conjunto $S$. \\
     corte\_minimo.py & corte\_minimo(red, residual, s) & Calcula $S$, $T=V\setminus S$, los arcos activos de $S$ a $T$ y su capacidad $c(S,T)$. \\
@@ -475,7 +475,7 @@ Al resolver la red inicial con origen STG y destino PMO, Edmonds--Karp encuentra
   \label{tab:iteraciones}
 \end{table}
 
-Las claves del diccionario de resultado (\texttt{path}, \texttt{bottleneck}, \texttt{value\_after}, \texttt{iterations}, \texttt{flows}, \texttt{checks}) están en inglés porque siguen el contrato de datos de la interfaz; las funciones y variables del motor están en español.
+Las claves del diccionario de resultado (\texttt{path}, \texttt{bottleneck}, \texttt{value\_after}, \texttt{iterations}, \texttt{flows}, \texttt{checks}, \texttt{conservation\_table}, entre otras) están en inglés porque siguen el contrato de datos de la interfaz; las funciones y variables del motor están en español.
 
 La longitud de los caminos es no decreciente ($4,4,5,5,5,5,6,7,7$), como exige la teoría, y el flujo crece estrictamente hasta 20. El corte obtenido de la residual final y su verificación se presentan en la sección~4.
 
@@ -564,7 +564,7 @@ Las figuras~\ref{fig:res_red_inicial}--\ref{fig:res_mod2} muestran los resultado
 \section{Verificación y caso manual}
 
 \subsection{Resolución manual y redes residuales}
-Se resolvió \texttt{data/manual\_case.json}, con seis vértices, ocho arcos, origen $s$ y destino $t$. Se parte de flujo cero y se aplica Edmonds--Karp con BFS y vecinos en orden alfabético. En cada aumento se resta $\delta$ al residual directo y se suma al inverso. Los números de los dibujos siguientes representan capacidades residuales, no las etiquetas $x/c$ de la interfaz.
+Se resolvió \texttt{data/manual\_case.json}, con seis vértices, ocho arcos, origen $s$ y destino $t$. Se parte de flujo cero y se aplica Edmonds--Karp con BFS y vecinos en orden alfabético. En cada aumento se resta $\delta$ a la capacidad residual de cada arco $(u,v)$ recorrido y se suma a la de su sentido opuesto $(v,u)$. Los números de los dibujos siguientes representan capacidades residuales, no las etiquetas $x/c$ de la interfaz.
 
 \begin{table}[H]
   \centering
@@ -736,7 +736,7 @@ Los siguientes cuadros se obtuvieron de \texttt{flows}, las capacidades de los J
 \end{table}
 
 \subsection{Pruebas automáticas}
-Las pruebas de \texttt{tests/} (\texttt{test\_known\_cases}, \texttt{test\_modifications}, \texttt{test\_edge\_cases}, \texttt{test\_validation}, \texttt{test\_verificacion}) comprueban resultados conocidos, modificaciones, casos borde y errores de validación. Como contraste independiente, \texttt{brute\_force\_min\_cut} enumera todos los cortes de las tres redes de referencia y de veinte redes aleatorias válidas de seis nodos (semilla 1), y compara el mínimo con el flujo calculado. La suite se ejecuta desde la raíz con \texttt{python -m unittest}. Estas pruebas complementan el cálculo manual. La interfaz se revisó de forma interactiva, no con pruebas automáticas.
+Las pruebas de \texttt{tests/} (\texttt{test\_known\_cases}, \texttt{test\_modifications}, \texttt{test\_edge\_cases}, \texttt{test\_validation}, \texttt{test\_verificacion}) comprueban resultados conocidos, modificaciones, casos borde, errores de validación y la verificación independiente de capacidad, conservación y dualidad. Como contraste independiente, \texttt{brute\_force\_min\_cut} enumera todos los cortes de las tres redes de referencia y de veinte redes aleatorias válidas de seis nodos (semilla 1), y compara el mínimo con el flujo calculado. La suite se ejecuta desde la raíz con \texttt{python -m unittest}. Estas pruebas complementan el cálculo manual. La interfaz se revisó de forma interactiva, no con pruebas automáticas.
 
 % ==============================================================================
 % SECCIÓN 6: REFERENCIAS (Rodrigo Pedraza - R11)
