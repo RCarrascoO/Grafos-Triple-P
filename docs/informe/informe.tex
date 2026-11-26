@@ -249,7 +249,7 @@ Comprobación: $\sum_{v \in V} \deg^+(v) = \sum_{v \in V} \deg^-(v) = \lvert E\r
     Sin lazos & Ningún arco tiene la forma $(u,u)$ & Sí \\
     Sin arcos repetidos & Los 19 pares ordenados $(u,v)$ son distintos & Sí \\
     Sin arcos recíprocos & Para ningún $(u,v) \in E$ existe $(v,u) \in E$ (red acíclica) & Sí \\
-    Ningún vértice aislado & $\deg^+(v) + \deg^-(v) \ge 2$ para todo $v \in V$ (Tabla~\ref{tab:grados}) & Sí \\
+    Ningún vértice aislado & $\deg^+(v) + \deg^-(v) \ge 2$ para todo $v \in V$ (Cuadro~\ref{tab:grados}) & Sí \\
     $s \ne t$ & $s = \text{STG}$, $t = \text{PMO}$ & Sí \\
     Al menos dos caminos de $s$ a $t$ & $P_1$ y $P_2$ detallados abajo & Sí \\
     \bottomrule
@@ -271,7 +271,7 @@ $P_1$ y $P_2$ no comparten ningún arco ni ningún vértice intermedio, de modo 
 \begin{itemize}
   \item \textbf{Sentido único.} Todas las rutas avanzan de norte a sur. Un paquete nunca retrocede, y por eso la red no tiene ciclos ni arcos recíprocos.
   \item \textbf{Rutas alternativas.} Entre Santiago y Puerto Montt hay muchos caminos. Si una ruta se interrumpe, los paquetes pueden desviarse por otros centros; cuánto se pierde depende de las capacidades de las rutas que quedan (sección~4).
-  \item \textbf{Cotas inmediatas.} De Santiago pueden salir a lo más $10 + 12 + 6 = 28$ paquetes por hora, y a Puerto Montt pueden entrar a lo más $12 + 11 = 23$. Por lo tanto ningún flujo puede superar 23. El valor exacto depende de las capacidades intermedias, y se calcula mediante el algoritmo de la sección~2.
+  \item \textbf{Cotas inmediatas.} De Santiago pueden salir a lo más $10 + 12 + 6 = 28$ paquetes por hora, y a Puerto Montt pueden entrar a lo más $12 + 11 = 23$. Por lo tanto, ningún flujo puede superar 23. El valor exacto depende de las capacidades intermedias, y se calcula mediante el algoritmo de la sección~2.
 \end{itemize}
 
 % ==============================================================================
@@ -344,7 +344,7 @@ Es la variante de Ford--Fulkerson que fija la regla de elección: en cada iterac
     Terminación, capacidades enteras & Sí & Sí \\
     Terminación, capacidades reales & No siempre & Sí \\
     Reproducibilidad para el cálculo manual & Baja: sensible al orden de la DFS & Alta: caminos más cortos y orden fijo \\
-    Obtención del corte mínimo & Requiere una búsqueda adicional & La BFS sobre $G_x$ final entrega $S$ \\
+    Obtención del corte mínimo & Igual en ambos: la alcanzabilidad desde $s$ en $G_x$ final entrega $S$ & Igual en ambos \\
     \bottomrule
   \end{tabular}
   \caption{Comparación de las dos estrategias estudiadas.}
@@ -355,7 +355,7 @@ Es la variante de Ford--Fulkerson que fija la regla de elección: en cada iterac
 \begin{enumerate}
   \item \textbf{Garantía independiente de las capacidades.} La aplicación permite cambiar capacidades y agregar rutas; la cota de Edmonds--Karp no se degrada ni sufre el comportamiento oscilatorio del peor caso de DFS.
   \item \textbf{Determinismo y trazabilidad.} La sección~5 exige contrastar el cálculo manual con el código. Con caminos de menor longitud y vecinos en orden lexicográfico, cualquier integrante reproduce a mano las iteraciones del programa.
-  \item \textbf{Integración con el corte mínimo.} La misma búsqueda en anchura sobre la residual final, la que confirma que $t$ ya no es alcanzable, entrega el conjunto $S$ del corte mínimo.
+  \item \textbf{Corte mínimo sin trabajo adicional.} Al terminar, la residual final ya está construida y una búsqueda de alcanzabilidad desde $s$ (\texttt{alcanzables\_desde}, también con cola FIFO) entrega el conjunto $S$. Esta construcción vale con cualquier método de caminos aumentantes, incluido Ford--Fulkerson con DFS, así que no es un argumento a favor de Edmonds--Karp, sino una propiedad común que el código reutiliza.
   \item \textbf{Respaldo bibliográfico.} Es la variante de referencia en los textos clásicos, con demostraciones de corrección y complejidad \cite{edmondskarp1972, clrs2009, kleinberg2006, ahuja1993}.
 \end{enumerate}
 
@@ -383,7 +383,7 @@ Se obtiene sumando la conservación sobre los vértices de $S$: los arcos con am
 
 \textbf{Lema 2 (dualidad débil).} $\lvert x\rvert \le c(S,T)$. En el Lema 1 el primer término es a lo más $c(S,T)$ por $x \le c$, y el segundo es no negativo.
 
-\textbf{Teorema} \cite{ford1956}. Para un flujo factible $x$ son equivalentes: (1) $x$ es máximo; (2) $G_x$ no contiene camino aumentante de $s$ a $t$; (3) existe un corte con $\lvert x\rvert = c(S,T)$. En particular, \emph{el valor del flujo máximo es igual a la capacidad del corte mínimo}.
+\textbf{Teorema} \cite{ford1956}. Para un flujo factible $x$ son equivalentes: (1) $x$ es máximo; (2) $G_x$ no contiene camino aumentante de $s$ a $t$; (3) existe un corte $(S,T)$ con $\lvert x\rvert = c(S,T)$. En particular, \emph{el valor del flujo máximo es igual a la capacidad del corte mínimo}.
 
 \textbf{Idea de la demostración.}
 \begin{itemize}
@@ -411,8 +411,8 @@ def edmonds_karp(red, s, t):
     residual = construir_residual(red)
     valor = 0
     iteraciones = []
-    while camino := buscar_camino(residual, s, t):   # BFS, camino mas corto
-        delta = cuello_botella(residual, camino)     # min de residuales
+    while camino := buscar_camino(residual, s, t):   # BFS, camino más corto
+        delta = cuello_botella(residual, camino)     # mínimo de residuales
         aumentar(residual, camino, delta)            # res[u][v]-=d, res[v][u]+=d
         valor += delta
         iteraciones.append({"k": len(iteraciones) + 1, "path": camino,
@@ -425,7 +425,7 @@ def edmonds_karp(red, s, t):
 \begin{table}[H]
   \centering
   \small
-  \begin{tabular}{>{\ttfamily}p{3.2cm}>{\ttfamily}p{3.6cm}p{6.2cm}}
+  \begin{tabular}{>{\ttfamily\raggedright\arraybackslash}p{3.0cm}>{\ttfamily\raggedright\arraybackslash}p{4.4cm}p{6.0cm}}
     \toprule
     \textnormal{\textbf{Archivo (\texttt{core/})}} & \textnormal{\textbf{Función}} & \textbf{Propósito} \\
     \midrule
@@ -474,6 +474,8 @@ Al resolver la red inicial con origen STG y destino PMO, Edmonds--Karp encuentra
   \label{tab:iteraciones}
 \end{table}
 
+Las claves del diccionario de resultado (\texttt{path}, \texttt{bottleneck}, \texttt{value\_after}, \texttt{iterations}, \texttt{flows}, \texttt{checks}) están en inglés porque siguen el contrato de datos de la interfaz; las funciones y variables del motor están en español.
+
 La longitud de los caminos es no decreciente ($4,4,5,5,5,5,6,7,7$), como exige la teoría, y el flujo crece estrictamente hasta 20. El corte obtenido de la residual final y su verificación se presentan en la sección~4.
 
 \subsection{Código fuente, dependencias y ejecución}
@@ -484,7 +486,7 @@ python -m venv .venv
 .venv\Scripts\Activate.ps1        # Windows PowerShell; en Linux/macOS: source .venv/bin/activate
 pip install -r requirements.txt
 streamlit run app.py              # interfaz
-python -m unittest                # pruebas (solo biblioteca estandar)
+python -m unittest                # pruebas (solo biblioteca estándar)
 \end{lstlisting}
 
 % ==============================================================================
@@ -527,7 +529,7 @@ En \texttt{data/mod2.json}, partiendo nuevamente de la red inicial, se amplía C
 \[
 c(S,T)=c(\text{VAL},\text{PMO})+c(\text{OSO},\text{PMO})=12+11=23.
 \]
-Ambas entradas están saturadas. Aumentar otras rutas sin ampliar este acceso final no permite superar $23$. La nueva conexión CON--VAL ya alcanza ese valor por sí sola (prueba S8); la ampliación adicional de CON--TEM no aumenta el máximo de esta configuración. En el flujo obtenido, CON--TEM transporta $4$ de sus $9$ unidades disponibles.
+Ambas entradas están saturadas. Aumentar otras rutas sin ampliar este acceso final no permite superar $23$. La nueva conexión CON--VAL ya alcanza ese valor por sí sola (véase \texttt{tests/test\_modifications.py}); la ampliación adicional de CON--TEM no aumenta el máximo de esta configuración. En el flujo obtenido, CON--TEM transporta $4$ de sus $9$ unidades disponibles.
 
 \begin{figure}[H]
   \centering
@@ -553,7 +555,7 @@ Las tres configuraciones utilizan los mismos once centros y los terminales STG y
   \caption{Comparación de configuraciones; valores en paquetes/hora. Los conjuntos $S_0$ y $T_0$ se definieron en la configuración inicial.}
   \label{tab:comparacion}
 \end{table}
-Las figuras~\ref{fig:res_red_inicial}--\ref{fig:res_mod2} muestran los resultados de la aplicación. Las tablas de la sección siguiente permiten comprobar capacidad y conservación para cada escenario.
+Las figuras~\ref{fig:res_red_inicial}--\ref{fig:res_mod2} muestran los resultados de la aplicación. Los cuadros de la sección siguiente permiten comprobar capacidad y conservación para cada escenario.
 
 % ==============================================================================
 % SECCIÓN 5: VERIFICACIÓN (Sebastián Pereda - S13)
@@ -584,7 +586,7 @@ El tercer camino recorre $a\to b$, inverso residual del arco original $(b,a)$: c
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.93\textwidth,height=0.85\textheight,keepaspectratio]{figuras/manual_01_inicio.png}
-  \caption{Cálculo manuscrito de Sebastián: estado inicial y residual tras el primer aumento ($\delta=3$, $\lvert x\rvert=3$).}
+  \caption{Cálculo manuscrito: estado inicial y residual tras el primer aumento ($\delta=3$, $\lvert x\rvert=3$).}
   \label{fig:manual_inicio}
 \end{figure}
 
@@ -605,14 +607,14 @@ El tercer camino recorre $a\to b$, inverso residual del arco original $(b,a)$: c
   \label{fig:manual_corte}
 \end{figure}
 
-\textbf{Justificación:} Al intentar nuevamente un camino aumentante desde el origen $s$, solo se logra avanzar hasta el nodo $a$ (pasando por $c$), donde nos encontramos bloqueados para seguir hacia el destino $t$: el arco directo $(a,t)$ ya tiene su máxima capacidad utilizada ($c_x(a,t)=0$) y el arco inverso $(a,b)$ también quedó en $0$ al cancelarse el flujo previo de $(b,a)$ en la iteración 3. Por lo tanto, el conjunto alcanzable $S=\{s,a,c\}$ queda aislado del resto de la red ($T=\{b,d,t\}$) y ahí se cierra el flujo.
+\textbf{Justificación:} Al intentar nuevamente un camino aumentante desde el origen $s$, solo se logra avanzar hasta el nodo $a$ (pasando por $c$), donde el recorrido queda bloqueado. Desde $s$ no se puede ir a $b$ porque $(s,b)$ está saturado ($c_x(s,b)=0$); desde $c$ no hay arco residual hacia $d$; y desde $a$ el arco directo $(a,t)$ está lleno ($c_x(a,t)=0$) y el inverso $(a,b)$ quedó en $0$ al cancelarse el flujo previo de $(b,a)$ en el aumento 3. Por lo tanto, el conjunto alcanzable $S=\{s,a,c\}$ queda separado del resto de la red ($T=\{b,d,t\}$) y el algoritmo se detiene.
 
 Aquí \emph{aislado} significa que no hay arcos de capacidad residual positiva que permitan salir de $S$ hacia $T$; sí existen conexiones en la red original y arcos residuales en sentido contrario.
 
 \textbf{Certificación de optimalidad:} Los únicos arcos originales que cruzan de $S$ hacia $T$ son $(s,b)$ y $(a,t)$, ambos saturados, con capacidad total $c(S,T)=5+3=8$ paquetes/hora. Como todo flujo factible cumple $\lvert x\rvert\le c(S,T)$ y aquí se obtiene $\lvert x\rvert=c(S,T)=8$, se certifica que el flujo es \textbf{máximo} y el corte $(S,T)$ es \textbf{mínimo}.
 
 \subsection{Flujo final y contraste con el programa}
-El flujo final se recupera de cada arco original como $x(u,v)=c(u,v)-c_x(u,v)$. La tabla~\ref{tab:manual_capacidad} muestra que todos los valores son enteros y satisfacen $0\le x(u,v)\le c(u,v)$.
+El flujo final se recupera de cada arco original como $x(u,v)=c(u,v)-c_x(u,v)$. El cuadro~\ref{tab:manual_capacidad} muestra que todos los valores son enteros y satisfacen $0\le x(u,v)\le c(u,v)$.
 \begin{table}[H]
   \centering
   \begin{tabular}{lrrrr}
@@ -648,7 +650,7 @@ El flujo final se recupera de cada arco original como $x(u,v)=c(u,v)-c_x(u,v)$. 
   \caption{Conservación en los nodos intermedios del caso manual, coincidente con \texttt{conservation\_table}.}
   \label{tab:manual_conservacion}
 \end{table}
-El origen entrega $5+3=8$ y el destino recibe $3+5=8$ paquetes/hora. La salida de \texttt{resolver} coincide con el cálculo manual en los tres caminos, los cuellos de botella $(3,2,3)$, los flujos por arco y la partición del corte. La búsqueda final sin camino no agrega una fila a \texttt{iterations}. No se observaron diferencias entre ambas resoluciones.
+El origen entrega $5+3=8$ y el destino recibe $3+5=8$ \mbox{paquetes/hora}. La salida de \texttt{resolver} coincide con el cálculo manual en los tres caminos, los cuellos de botella $(3,2,3)$, los flujos por arco y la partición del corte. La búsqueda final sin camino no agrega una fila a \texttt{iterations}. No se observaron diferencias entre ambas resoluciones.
 
 \begin{figure}[H]
   \centering
@@ -658,7 +660,7 @@ El origen entrega $5+3=8$ y el destino recibe $3+5=8$ paquetes/hora. La salida d
 \end{figure}
 
 \subsection{Comprobaciones de las tres configuraciones}
-Las siguientes tablas se obtuvieron de \texttt{flows}, las capacidades de los JSON y \texttt{checks} al ejecutar \texttt{resolver} para cada configuración. \texttt{core/verificacion.py} recalcula las comprobaciones desde la red y los flujos, sin consultar el motor ni su residual.
+Los siguientes cuadros se obtuvieron de \texttt{flows}, las capacidades de los JSON y \texttt{checks} al ejecutar \texttt{resolver} para cada configuración. \texttt{core/verificacion.py} recalcula las comprobaciones desde la red y los flujos, sin consultar el motor ni su residual.
 
 \begin{table}[H]
   \centering
@@ -733,14 +735,13 @@ Las siguientes tablas se obtuvieron de \texttt{flows}, las capacidades de los JS
 \end{table}
 
 \subsection{Pruebas automáticas}
-Las pruebas S7--S11 comprueban resultados conocidos, modificaciones, casos borde y errores de validación. Como contraste independiente, \texttt{brute\_force\_min\_cut} enumera todos los cortes de las tres redes de referencia y de veinte redes aleatorias válidas de seis nodos (semilla 1), y compara el mínimo con el flujo calculado. La suite se ejecuta desde la raíz con \texttt{python -m unittest}. Estas pruebas complementan el cálculo manual; la revisión interactiva de la interfaz corresponde a S14.
+Las pruebas de \texttt{tests/} (\texttt{test\_known\_cases}, \texttt{test\_modifications}, \texttt{test\_edge\_cases}, \texttt{test\_validation}, \texttt{test\_verificacion}) comprueban resultados conocidos, modificaciones, casos borde y errores de validación. Como contraste independiente, \texttt{brute\_force\_min\_cut} enumera todos los cortes de las tres redes de referencia y de veinte redes aleatorias válidas de seis nodos (semilla 1), y compara el mínimo con el flujo calculado. La suite se ejecuta desde la raíz con \texttt{python -m unittest}. Estas pruebas complementan el cálculo manual. La interfaz se revisó de forma interactiva, no con pruebas automáticas.
 
 % ==============================================================================
 % SECCIÓN 6: REFERENCIAS (Rodrigo Pedraza - R11)
 % ==============================================================================
-\section{Referencias}
-
-\subsection*{Fuentes académicas}
+\renewcommand{\refname}{Referencias: fuentes académicas}
+\addcontentsline{toc}{section}{Referencias}
 \begin{thebibliography}{99}
   \bibitem{ahuja1993} Ahuja, R. K., Magnanti, T. L., \& Orlin, J. B. (1993). \emph{Network Flows: Theory, Algorithms, and Applications}. Prentice Hall. ISBN 978-0-13-617549-0.
   \bibitem{clrs2009} Cormen, T. H., Leiserson, C. E., Rivest, R. L., \& Stein, C. (2009). \emph{Introduction to Algorithms} (3.ª ed.), cap.~26 ``Maximum Flow''. The MIT Press. ISBN 978-0-262-03384-8.
