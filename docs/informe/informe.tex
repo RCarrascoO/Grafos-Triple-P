@@ -92,7 +92,7 @@
 \section*{Notación común del informe}
 \addcontentsline{toc}{section}{Notación común del informe}
 
-Las cinco secciones de este informe utilizan los siguientes símbolos y definiciones estándar:
+Las secciones de este informe utilizan los siguientes símbolos y definiciones estándar:
 
 \begin{table}[H]
   \centering
@@ -279,24 +279,213 @@ $P_1$ y $P_2$ no comparten ningún arco ni ningún vértice intermedio, de modo 
 % ==============================================================================
 \section{Investigación y selección del algoritmo}
 
-\poragregar{Rodrigo Pedraza (Tarea R9)}{%
-  Completar a partir de \texttt{docs/fase2-algoritmo.md}:
-  \begin{itemize}
-    \item Definición de flujo factible, red residual $G_x$, $c_x(u,v)$ y camino aumentante.
-    \item Descripción de al menos dos algoritmos alternativos (ej. Ford--Fulkerson, Edmonds--Karp, Dinic).
-    \item Tabla comparativa de complejidad temporal, ventajas y desventajas.
-    \item Justificación de la elección de Edmonds--Karp y citas bibliográficas confirmadas.
-  \end{itemize}
-}
+\subsection{Formulación del problema de flujo máximo}
+
+Dada la red $G = (V, E)$ de la sección~1, con capacidades enteras $c: E \to \{1, \dots, 12\}$, un origen $s$ y un destino $t$ ($s \ne t$), se busca un flujo $x$ que asigne a cada arco $(u,v) \in E$ una cantidad $x(u,v)$ de paquetes por hora tal que:
+\begin{itemize}
+  \item \textbf{Capacidad:} $0 \le x(u,v) \le c(u,v)$ para todo $(u,v) \in E$.
+  \item \textbf{Conservación:} para todo $v \in V \setminus \{s,t\}$,
+  \[
+    \sum_{(u,v)\in E} x(u,v) = \sum_{(v,w)\in E} x(v,w).
+  \]
+\end{itemize}
+Un flujo que cumple ambas condiciones es \emph{factible}. Su valor es la cantidad neta que sale del origen,
+\[
+  \lvert x\rvert = \sum_{(s,v)\in E} x(s,v) - \sum_{(u,s)\in E} x(u,s),
+\]
+y el objetivo es maximizarlo. Un flujo de valor máximo se denota $x^*$.
+
+\subsection{Red residual y caminos aumentantes}
+
+Los métodos de caminos aumentantes comparten la noción de red residual $G_x$ asociada a un flujo factible $x$ \cite{ford1956, clrs2009}. Cada arco original $(u,v) \in E$ genera dos capacidades residuales:
+\begin{itemize}
+  \item \textbf{Directa:} $c_x(u,v) = c(u,v) - x(u,v)$, lo que todavía cabe por $(u,v)$.
+  \item \textbf{Inversa:} $c_x(v,u) = x(u,v)$, el flujo ya enviado por $(u,v)$ que puede cancelarse o redirigirse.
+\end{itemize}
+Un \emph{camino aumentante} es un camino simple de $s$ a $t$ en $G_x$ formado solo por arcos con $c_x > 0$. Su \emph{cuello de botella} $\delta$ es la menor capacidad residual del camino. Enviar $\delta$ unidades por él (restando $\delta$ a los residuales directos recorridos y sumándolo a sus inversos) produce un flujo factible de valor $\lvert x\rvert + \delta$.
+
+\textbf{Los arcos inversos son indispensables.} Sin ellos el procedimiento es una heurística voraz que puede quedar bloqueada. En el caso manual de la sección~5, si primero se envían 3 unidades por $s\to b\to a\to t$ y luego 2 por $s\to b\to d\to t$, el flujo queda en $5$ y no hay otro camino directo con capacidad; el óptimo es $8$ y solo se alcanza cancelando flujo de $(b,a)$ mediante su arco inverso.
+
+\textbf{Efecto de prohibir arcos recíprocos.} Como $G$ no contiene a la vez $(u,v)$ y $(v,u)$, el inverso residual de un arco nunca coincide con un arco original. Se mantiene así $c_x(u,v) + c_x(v,u) = c(u,v)$ y el flujo de cada ruta se recupera como $x(u,v) = c(u,v) - c_x(u,v)$.
+
+\subsection{Alternativa A: Ford--Fulkerson con búsqueda en profundidad}
+
+Parte de $x = 0$. Mientras exista un camino aumentante en $G_x$, lo busca con una búsqueda en profundidad (DFS) desde $s$, calcula su $\delta$ y actualiza $x$ y $G_x$; termina cuando $t$ deja de ser alcanzable. Ford y Fulkerson \cite{ford1956} lo plantean como un \emph{método}: no fijan cómo elegir el camino, y usar DFS es una instanciación concreta \cite{clrs2009}.
+\begin{itemize}
+  \item \textbf{Terminación.} Con capacidades enteras cada aumento aporta $\delta \ge 1$, así que termina en a lo más $\lvert x^*\rvert$ iteraciones. Solo con capacidades irracionales hay redes donde no termina \cite{kleinberg2006}.
+  \item \textbf{Complejidad.} Cada DFS cuesta $O(\lvert E\rvert)$; la cota total es $O(\lvert E\rvert \cdot \lvert x^*\rvert)$, \emph{pseudo-polinomial} porque depende del valor numérico de las capacidades.
+  \item \textbf{Dependencia del orden.} La DFS puede elegir caminos largos con cuellos de botella pequeños, y la secuencia de iteraciones cambia con el orden de exploración.
+\end{itemize}
+\textbf{Peor caso.} Sea una red con arcos $(s,a)$, $(s,b)$, $(a,t)$, $(b,t)$ de capacidad 12 y un arco central $(a,b)$ de capacidad 1 (variante del ejemplo de \cite{clrs2009}, §26.2). El flujo máximo es 24. Si la DFS alterna $s\to a\to b\to t$ y $s\to b\to a\to t$ (usando el inverso de $(a,b)$), cada iteración aporta $\delta = 1$ y se requieren 24; con búsqueda en anchura bastan 2 ($s\to a\to t$ y $s\to b\to t$).
+
+\subsection{Alternativa B: Edmonds--Karp con búsqueda en anchura}
+
+Es la variante de Ford--Fulkerson que fija la regla de elección: en cada iteración toma un camino aumentante con el \emph{menor número de arcos}, mediante una búsqueda en anchura (BFS) con cola FIFO desde $s$ \cite{edmondskarp1972}.
+\begin{itemize}
+  \item \textbf{Terminación} garantizada para cualquier capacidad positiva, entera o real \cite{edmondskarp1972}.
+  \item \textbf{Complejidad} $O(\lvert V\rvert \cdot \lvert E\rvert^2)$, polinomial en el tamaño de la red e independiente de las capacidades \cite{clrs2009, ahuja1993}.
+  \item \textbf{Idea de la demostración} \cite{edmondskarp1972, clrs2009}: (1) la distancia en arcos desde $s$ a cada vértice en $G_x$ nunca disminuye; (2) en cada aumento se satura al menos un arco crítico, y para que vuelva a ser crítico la distancia desde $s$ a su extremo inicial debe crecer al menos en 2; (3) como esa distancia es menor que $\lvert V\rvert$, cada arco es crítico a lo más $\lvert V\rvert/2$ veces, hay $O(\lvert V\rvert\cdot\lvert E\rvert)$ aumentos y cada BFS cuesta $O(\lvert E\rvert)$.
+  \item \textbf{Determinismo.} Si los vecinos se recorren en orden lexicográfico, la secuencia de caminos, cuellos de botella y flujos intermedios es reproducible.
+\end{itemize}
+
+\subsection{Comparación y selección}
+
+\begin{table}[H]
+  \centering
+  \small
+  \begin{tabular}{p{4.2cm}p{4.6cm}p{4.6cm}}
+    \toprule
+    \textbf{Criterio} & \textbf{Ford--Fulkerson + DFS} & \textbf{Edmonds--Karp (BFS)} \\
+    \midrule
+    Camino aumentante elegido & El primero que encuentra la DFS & El más corto en número de arcos \\
+    Estructura auxiliar & Pila o recursión & Cola FIFO (\texttt{collections.deque}) \\
+    Complejidad temporal & $O(\lvert E\rvert \cdot \lvert x^*\rvert)$ & $O(\lvert V\rvert \cdot \lvert E\rvert^2)$ \\
+    ¿Depende de las capacidades? & Sí (pseudo-polinomial) & No (fuertemente polinomial) \\
+    Terminación, capacidades enteras & Sí & Sí \\
+    Terminación, capacidades reales & No siempre & Sí \\
+    Reproducibilidad para el cálculo manual & Baja: sensible al orden de la DFS & Alta: caminos más cortos y orden fijo \\
+    Obtención del corte mínimo & Requiere una búsqueda adicional & La BFS sobre $G_x$ final entrega $S$ \\
+    \bottomrule
+  \end{tabular}
+  \caption{Comparación de las dos estrategias estudiadas.}
+  \label{tab:comparacion_alg}
+\end{table}
+
+\textbf{Algoritmo seleccionado: Edmonds--Karp.} Los motivos, ligados a los requisitos del proyecto, son:
+\begin{enumerate}
+  \item \textbf{Garantía independiente de las capacidades.} La aplicación permite cambiar capacidades y agregar rutas; la cota de Edmonds--Karp no se degrada ni sufre el comportamiento oscilatorio del peor caso de DFS.
+  \item \textbf{Determinismo y trazabilidad.} La sección~5 exige contrastar el cálculo manual con el código. Con caminos de menor longitud y vecinos en orden lexicográfico, cualquier integrante reproduce a mano las iteraciones del programa.
+  \item \textbf{Integración con el corte mínimo.} La misma búsqueda en anchura sobre la residual final, la que confirma que $t$ ya no es alcanzable, entrega el conjunto $S$ del corte mínimo.
+  \item \textbf{Respaldo bibliográfico.} Es la variante de referencia en los textos clásicos, con demostraciones de corrección y complejidad \cite{edmondskarp1972, clrs2009, kleinberg2006, ahuja1993}.
+\end{enumerate}
+
+\textbf{Alcance de la justificación.} Con $\lvert V\rvert \le 12$ y $c \le 12$, ambas estrategias se ejecutan de forma instantánea. En la red inicial el número de aumentos de la cota de DFS ($\lvert x^*\rvert = 20$) es incluso menor que $\lvert V\rvert\cdot\lvert E\rvert = 11\cdot 19 = 209$; Edmonds--Karp requirió solo 9 iteraciones. Por eso la elección no se apoya en velocidad medida ni en una supuesta falta de terminación de DFS, sino en las garantías teóricas, el determinismo y la trazabilidad.
+
+\textbf{Otras alternativas.} Existen algoritmos asintóticamente mejores para redes grandes, como Dinic \cite{dinic1970} (flujos bloqueantes sobre redes por niveles, $O(\lvert V\rvert^2\lvert E\rvert)$) y los de preflujo (\emph{push--relabel}) \cite{ahuja1993, clrs2009}. No se implementaron: con 12 vértices no aportan ventajas prácticas y dificultan el seguimiento iteración a iteración frente al cálculo manual.
 
 % ==============================================================================
 % SECCIÓN 3: CORTE MÍNIMO E IMPLEMENTACIÓN (Rodrigo Pedraza - R10)
 % ==============================================================================
 \section{Teorema de flujo máximo--corte mínimo e implementación}
 
-\poragregar{Rodrigo Pedraza (Tarea R10)}{%
-  Explicar el teorema de flujo máximo--corte mínimo ($\lvert x^*\rvert = c(S,T)$), el procedimiento de alcanzabilidad en $G_{x^*}$ desde $s$ para obtener $(S,T)$, y documentar las funciones implementadas en \texttt{core/} (\texttt{flujo\_maximo.py}, \texttt{corte\_minimo.py}, \texttt{resolvedor.py}, \texttt{ediciones.py}, \texttt{validacion.py}).
-}
+\subsection{Teorema de flujo máximo--corte mínimo}
+
+Un \emph{corte} $(S,T)$ es una partición $V = S \cup T$, $S \cap T = \emptyset$, con $s \in S$ y $t \in T$. Su capacidad suma solo los arcos que van de $S$ a $T$:
+\[
+  c(S,T) = \sum_{\substack{(u,v)\in E\\ u\in S,\ v\in T}} c(u,v).
+\]
+
+\textbf{Lema 1 (flujo a través de un corte).} Para todo flujo factible $x$ y todo corte $(S,T)$ \cite{clrs2009, kleinberg2006},
+\[
+  \lvert x\rvert = \sum_{\substack{(u,v)\in E\\ u\in S,\ v\in T}} x(u,v) - \sum_{\substack{(v,u)\in E\\ v\in T,\ u\in S}} x(v,u).
+\]
+Se obtiene sumando la conservación sobre los vértices de $S$: los arcos con ambos extremos en $S$ se cancelan y sobreviven los que cruzan la frontera.
+
+\textbf{Lema 2 (dualidad débil).} $\lvert x\rvert \le c(S,T)$. En el Lema 1 el primer término es a lo más $c(S,T)$ por $x \le c$, y el segundo es no negativo.
+
+\textbf{Teorema} \cite{ford1956}. Para un flujo factible $x$ son equivalentes: (1) $x$ es máximo; (2) $G_x$ no contiene camino aumentante de $s$ a $t$; (3) existe un corte con $\lvert x\rvert = c(S,T)$. En particular, \emph{el valor del flujo máximo es igual a la capacidad del corte mínimo}.
+
+\textbf{Idea de la demostración.}
+\begin{itemize}
+  \item $(1\Rightarrow 2)$ Un camino aumentante con $\delta>0$ permitiría llegar a $\lvert x\rvert+\delta$.
+  \item $(2\Rightarrow 3)$ Sea $S$ el conjunto de vértices alcanzables desde $s$ en $G_x$ por arcos con $c_x>0$ y $T = V\setminus S$; como no hay camino aumentante, $t\in T$. Todo arco $(u,v)$ con $u\in S$, $v\in T$ está saturado (si no, $v$ sería alcanzable), y todo arco $(v,u)$ con $v\in T$, $u\in S$ lleva flujo nulo (si no, su inverso daría $c_x(u,v)>0$). Por el Lema 1, $\lvert x\rvert = c(S,T)$.
+  \item $(3\Rightarrow 1)$ Por el Lema 2 ningún flujo supera $c(S,T)$; luego $x$ es máximo y $(S,T)$ mínimo.
+\end{itemize}
+
+\textbf{Integralidad.} Con capacidades enteras existe un flujo máximo entero, y Edmonds--Karp lo encuentra porque parte de $x=0$ y cada $\delta$ es entero \cite{ford1956, ahuja1993}. Los paquetes por hora no se fraccionan.
+
+\textbf{Unicidad.} El valor $\lvert x^*\rvert$ y la capacidad mínima de corte son únicos, pero ni el flujo por arco ni el corte mínimo tienen por qué serlo. La construcción $(2\Rightarrow 3)$ implementada entrega el corte mínimo con el $S$ más pequeño, es decir, el cuello de botella más cercano al origen.
+
+\subsection{Arquitectura del motor y red residual}
+
+El código tiene dos capas con dependencia unidireccional (\texttt{app.py} $\to$ \texttt{core/}). \texttt{core/} contiene la lógica algorítmica y de verificación usando solo la biblioteca estándar de Python (\texttt{collections.deque}, \texttt{json}); no importa bibliotecas de grafos ni de cálculo. \texttt{app.py} es la interfaz Streamlit (única dependencia, \texttt{requirements.txt}) y dibuja la red con \texttt{st.graphviz\_chart}, sin calcular flujo ni corte. Ninguna función del motor modifica el diccionario de red recibido.
+
+La red es el diccionario cargado desde JSON (\texttt{nodes}, \texttt{arcs}, \texttt{source}, \texttt{sink}, \texttt{profile}); el cálculo usa solo los arcos con \texttt{"active": true} (\texttt{arcos\_activos}). La residual $G_x$ es un diccionario de diccionarios donde \texttt{residual[u][v]} guarda $c_x(u,v)$. Que exista \texttt{residual[v][u]} para cada arco activo \emph{no contradice} la prohibición de arcos recíprocos: esa prohibición rige para las rutas físicas de $G$, mientras que el inverso es solo una estructura auxiliar que permite cancelar flujo. Como $G$ no tiene recíprocos, el inverso nunca colisiona con un arco original y al terminar el flujo se recupera como $x(u,v) = c(u,v) - \texttt{residual[u][v]}$.
+
+\subsection{Funciones implementadas}
+
+Cada función tiene \emph{docstring} con propósito, entradas y salida. El código completo está en el repositorio; el núcleo del algoritmo es:
+
+\begin{lstlisting}
+def edmonds_karp(red, s, t):
+    residual = construir_residual(red)
+    valor = 0
+    iteraciones = []
+    while camino := buscar_camino(residual, s, t):   # BFS, camino mas corto
+        delta = cuello_botella(residual, camino)     # min de residuales
+        aumentar(residual, camino, delta)            # res[u][v]-=d, res[v][u]+=d
+        valor += delta
+        iteraciones.append({"k": len(iteraciones) + 1, "path": camino,
+                            "bottleneck": delta, "value_after": valor})
+    flujos = {a["id"]: a["capacity"] - residual[a["from"]][a["to"]]
+              for a in arcos_activos(red)}
+    return valor, flujos, iteraciones, residual
+\end{lstlisting}
+
+\begin{table}[H]
+  \centering
+  \small
+  \begin{tabular}{>{\ttfamily}p{3.2cm}>{\ttfamily}p{3.6cm}p{6.2cm}}
+    \toprule
+    \textnormal{\textbf{Archivo (\texttt{core/})}} & \textnormal{\textbf{Función}} & \textbf{Propósito} \\
+    \midrule
+    flujo\_maximo.py & construir\_residual(red) & Residual inicial para $x=0$: \texttt{res[u][v]=c}, \texttt{res[v][u]=0} por arco activo. \\
+    flujo\_maximo.py & buscar\_camino(residual, s, t) & BFS con cola FIFO, vecinos en orden lexicográfico, solo arcos con residual $>0$; devuelve el camino más corto o \texttt{None}. \\
+    flujo\_maximo.py & cuello\_botella(residual, camino) & Mínimo residual entre pares consecutivos: $\delta$. \\
+    flujo\_maximo.py & aumentar(residual, camino, delta) & Resta $\delta$ al directo y lo suma al inverso en cada par del camino. \\
+    flujo\_maximo.py & edmonds\_karp(red, s, t) & Bucle anterior hasta agotar caminos; devuelve valor, flujo por arco activo, iteraciones y residual final. \\
+    corte\_minimo.py & alcanzables\_desde(residual, s) & BFS desde $s$ por arcos con residual $>0$: el conjunto $S$. \\
+    corte\_minimo.py & corte\_minimo(red, residual, s) & Calcula $S$, $T=V\setminus S$, los arcos activos de $S$ a $T$ y su capacidad $c(S,T)$. \\
+    resolvedor.py & resolver(red, origen, destino) & Punto de entrada: valida terminales, ejecuta el flujo, el corte y las comprobaciones. \\
+    validacion.py & validar\_red, validar\_arco\_nuevo, capacidad\_valida, contar\_caminos & Hacen cumplir las restricciones del enunciado (sección~1). \\
+    ediciones.py & agregar\_arco, cambiar\_capacidad, cambiar\_estado, eliminar\_arco & Modificaciones de la red desde la interfaz, sin editar código. \\
+    verificacion.py & verificar\_todo y auxiliares & Recalcula capacidad, conservación y $\lvert x\rvert=c(S,T)$ solo desde la red y los flujos. \\
+    \bottomrule
+  \end{tabular}
+  \caption{Funciones del motor.}
+  \label{tab:funciones}
+\end{table}
+
+\textbf{Casos borde.} Terminales iguales o inexistentes devuelven un código de error; con destino inalcanzable $\lvert x\rvert = 0$, no hay iteraciones y $c(S,T)=0$; los arcos desactivados quedan fuera de la residual, de los flujos y del corte.
+
+\subsection{Registro de iteraciones de la red inicial}
+
+Al resolver la red inicial con origen STG y destino PMO, Edmonds--Karp encuentra $\lvert x^*\rvert = 20$ en 9 iteraciones:
+
+\begin{table}[H]
+  \centering
+  \small
+  \begin{tabular}{clcc c}
+    \toprule
+    $k$ & Camino aumentante en $G_x$ & Arcos & $\delta$ & $\lvert x\rvert$ \\
+    \midrule
+    1 & STG--CON--LAN--VAL--PMO & 4 & 5 & 5 \\
+    2 & STG--CON--TEM--OSO--PMO & 4 & 1 & 6 \\
+    3 & STG--RAN--CHI--LAN--VAL--PMO & 5 & 1 & 7 \\
+    4 & STG--RAN--CHI--TEM--OSO--PMO & 5 & 3 & 10 \\
+    5 & STG--RAN--CHI--TEM--VAL--PMO & 5 & 1 & 11 \\
+    6 & STG--TAL--CON--TEM--VAL--PMO & 5 & 5 & 16 \\
+    7 & STG--TAL--CON--TEM--VIL--OSO--PMO & 6 & 1 & 17 \\
+    8 & STG--RAN--CHI--LAN--TEM--VIL--OSO--PMO & 7 & 2 & 19 \\
+    9 & STG--TAL--CHI--LAN--TEM--VIL--OSO--PMO & 7 & 1 & 20 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Iteraciones de Edmonds--Karp sobre la red inicial.}
+  \label{tab:iteraciones}
+\end{table}
+
+La longitud de los caminos es no decreciente ($4,4,5,5,5,5,6,7,7$), como exige la teoría, y el flujo crece estrictamente hasta 20. El corte obtenido de la residual final y su verificación se presentan en la sección~4.
+
+\subsection{Código fuente, dependencias y ejecución}
+
+El código fuente completo está en \url{https://github.com/RCarrascoO/Grafos-Triple-P}. Requiere Python 3.11 o superior y \texttt{streamlit} (única dependencia, solo para la interfaz). Instrucciones, desde la raíz del repositorio:
+\begin{lstlisting}[language={}]
+python -m venv .venv
+.venv\Scripts\Activate.ps1        # Windows PowerShell; en Linux/macOS: source .venv/bin/activate
+pip install -r requirements.txt
+streamlit run app.py              # interfaz
+python -m unittest                # pruebas (solo biblioteca estandar)
+\end{lstlisting}
 
 % ==============================================================================
 % SECCIÓN 4: RESULTADOS Y ANÁLISIS (Sebastián Pereda - S13)
@@ -551,8 +740,21 @@ Las pruebas S7--S11 comprueban resultados conocidos, modificaciones, casos borde
 % ==============================================================================
 \section{Referencias}
 
-\poragregar{Rodrigo Pedraza (Tarea R11)}{%
-  Agregar referencias académicas y técnicas verificadas (ej. Cormen et al. CLRS, Kleinberg \& Tardos, documentación de Python/Streamlit/Graphviz) usando \texttt{\textbackslash begin\{thebibliography\}} o BibLaTeX.
-}
+\subsection*{Fuentes académicas}
+\begin{thebibliography}{99}
+  \bibitem{ahuja1993} Ahuja, R. K., Magnanti, T. L., \& Orlin, J. B. (1993). \emph{Network Flows: Theory, Algorithms, and Applications}. Prentice Hall. ISBN 978-0-13-617549-0.
+  \bibitem{clrs2009} Cormen, T. H., Leiserson, C. E., Rivest, R. L., \& Stein, C. (2009). \emph{Introduction to Algorithms} (3.ª ed.), cap.~26 ``Maximum Flow''. The MIT Press. ISBN 978-0-262-03384-8.
+  \bibitem{dinic1970} Dinic, E. A. (1970). Algorithm for solution of a problem of maximum flow in networks with power estimation. \emph{Soviet Mathematics Doklady}, 11, 1277--1280.
+  \bibitem{edmondskarp1972} Edmonds, J., \& Karp, R. M. (1972). Theoretical improvements in algorithmic efficiency for network flow problems. \emph{Journal of the ACM}, 19(2), 248--264. \url{https://doi.org/10.1145/321694.321699}
+  \bibitem{ford1956} Ford, L. R., Jr., \& Fulkerson, D. R. (1956). Maximal flow through a network. \emph{Canadian Journal of Mathematics}, 8, 399--404. \url{https://doi.org/10.4153/CJM-1956-045-5}
+  \bibitem{kleinberg2006} Kleinberg, J., \& Tardos, É. (2006). \emph{Algorithm Design}, cap.~7 ``Network Flow''. Addison-Wesley. ISBN 978-0-321-29535-4.
+\end{thebibliography}
+
+\subsection*{Fuentes técnicas}
+\begin{itemize}
+  \item Python Software Foundation. \emph{The Python Standard Library: \texttt{collections} (\texttt{deque})}. \url{https://docs.python.org/3/library/collections.html}
+  \item Streamlit Inc. \emph{Streamlit Documentation: \texttt{st.graphviz\_chart}}. \url{https://docs.streamlit.io/develop/api-reference/charts/st.graphviz_chart}
+  \item Graphviz. \emph{DOT Language Specification}. \url{https://graphviz.org/doc/info/lang.html}
+\end{itemize}
 
 \end{document}
