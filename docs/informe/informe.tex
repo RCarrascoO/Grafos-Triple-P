@@ -355,9 +355,10 @@ Es la variante de Ford--Fulkerson que fija la regla de elección: en cada iterac
 \begin{enumerate}
   \item \textbf{Garantía independiente de las capacidades.} La aplicación permite cambiar capacidades y agregar rutas; la cota de Edmonds--Karp no se degrada ni sufre el comportamiento oscilatorio del peor caso de DFS.
   \item \textbf{Determinismo y trazabilidad.} La sección~5 exige contrastar el cálculo manual con el código. Con caminos de menor longitud y vecinos en orden lexicográfico, cualquier integrante reproduce a mano las iteraciones del programa.
-  \item \textbf{Corte mínimo sin trabajo adicional.} Al terminar, la residual final ya está construida y una búsqueda de alcanzabilidad desde $s$ (\texttt{alcanzables\_desde}, también con cola FIFO) entrega el conjunto $S$. Esta construcción vale con cualquier método de caminos aumentantes, incluido Ford--Fulkerson con DFS, así que no es un argumento a favor de Edmonds--Karp, sino una propiedad común que el código reutiliza.
   \item \textbf{Respaldo bibliográfico.} Es la variante de referencia en los textos clásicos, con demostraciones de corrección y complejidad \cite{edmondskarp1972, clrs2009, kleinberg2006, ahuja1993}.
 \end{enumerate}
+
+\textbf{Obtención del corte mínimo.} Al terminar, la residual final ya está construida y una búsqueda de alcanzabilidad desde $s$ (\texttt{alcanzables\_desde}, también con cola FIFO) entrega el conjunto $S$. Esta construcción vale con cualquier método de caminos aumentantes, incluido Ford--Fulkerson con DFS, por lo que no cuenta como motivo de selección, sino como propiedad común que el código reutiliza.
 
 \textbf{Alcance de la justificación.} Con $\lvert V\rvert \le 12$ y $c \le 12$, ambas estrategias se ejecutan de forma instantánea. En la red inicial el número de aumentos de la cota de DFS ($\lvert x^*\rvert = 20$) es incluso menor que $\lvert V\rvert\cdot\lvert E\rvert = 11\cdot 19 = 209$; Edmonds--Karp requirió solo 9 iteraciones. Por eso la elección no se apoya en velocidad medida ni en una supuesta falta de terminación de DFS, sino en las garantías teóricas, el determinismo y la trazabilidad.
 
@@ -434,7 +435,7 @@ def edmonds_karp(red, s, t):
     flujo\_maximo.py & cuello\_botella(residual, camino) & Mínimo residual entre pares consecutivos: $\delta$. \\
     flujo\_maximo.py & aumentar(residual, camino, delta) & Resta $\delta$ al directo y lo suma al inverso en cada par del camino. \\
     flujo\_maximo.py & edmonds\_karp(red, s, t) & Bucle anterior hasta agotar caminos; devuelve valor, flujo por arco activo, iteraciones y residual final. \\
-    corte\_minimo.py & alcanzables\_desde(residual, s) & BFS desde $s$ por arcos con residual $>0$: el conjunto $S$. \\
+    corte\_minimo.py & alcanzables\_\allowbreak desde(\allowbreak residual, s) & BFS desde $s$ por arcos con residual $>0$: el conjunto $S$. \\
     corte\_minimo.py & corte\_minimo(red, residual, s) & Calcula $S$, $T=V\setminus S$, los arcos activos de $S$ a $T$ y su capacidad $c(S,T)$. \\
     resolvedor.py & resolver(red, origen, destino) & Punto de entrada: valida terminales, ejecuta el flujo, el corte y las comprobaciones. \\
     validacion.py & validar\_red, validar\_arco\_nuevo, capacidad\_valida, contar\_caminos & Hacen cumplir las restricciones del enunciado (sección~1). \\
@@ -609,9 +610,9 @@ El tercer camino recorre $a\to b$, inverso residual del arco original $(b,a)$: c
 
 \textbf{Justificación:} Al intentar nuevamente un camino aumentante desde el origen $s$, solo se logra avanzar hasta el nodo $a$ (pasando por $c$), donde el recorrido queda bloqueado. Desde $s$ no se puede ir a $b$ porque $(s,b)$ está saturado ($c_x(s,b)=0$); desde $c$ no hay arco residual hacia $d$; y desde $a$ el arco directo $(a,t)$ está lleno ($c_x(a,t)=0$) y el inverso $(a,b)$ quedó en $0$ al cancelarse el flujo previo de $(b,a)$ en el aumento 3. Por lo tanto, el conjunto alcanzable $S=\{s,a,c\}$ queda separado del resto de la red ($T=\{b,d,t\}$) y el algoritmo se detiene.
 
-Aquí \emph{aislado} significa que no hay arcos de capacidad residual positiva que permitan salir de $S$ hacia $T$; sí existen conexiones en la red original y arcos residuales en sentido contrario.
+Aquí \emph{separado} significa que no hay arcos de capacidad residual positiva que permitan salir de $S$ hacia $T$; sí existen conexiones en la red original y arcos residuales en sentido contrario.
 
-\textbf{Certificación de optimalidad:} Los únicos arcos originales que cruzan de $S$ hacia $T$ son $(s,b)$ y $(a,t)$, ambos saturados, con capacidad total $c(S,T)=5+3=8$ paquetes/hora. Como todo flujo factible cumple $\lvert x\rvert\le c(S,T)$ y aquí se obtiene $\lvert x\rvert=c(S,T)=8$, se certifica que el flujo es \textbf{máximo} y el corte $(S,T)$ es \textbf{mínimo}.
+\textbf{Certificación de optimalidad:} Los únicos arcos originales que cruzan de $S$ hacia $T$ son $(s,b)$ y $(a,t)$, ambos saturados, con capacidad total $c(S,T)=5+3=8$ \mbox{paquetes/hora}. Como todo flujo factible cumple $\lvert x\rvert\le c(S,T)$ y aquí se obtiene $\lvert x\rvert=c(S,T)=8$, se certifica que el flujo es \textbf{máximo} y el corte $(S,T)$ es \textbf{mínimo}.
 
 \subsection{Flujo final y contraste con el programa}
 El flujo final se recupera de cada arco original como $x(u,v)=c(u,v)-c_x(u,v)$. El cuadro~\ref{tab:manual_capacidad} muestra que todos los valores son enteros y satisfacen $0\le x(u,v)\le c(u,v)$.
